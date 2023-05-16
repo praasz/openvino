@@ -247,6 +247,59 @@ std::unique_ptr<TRes> get_input_const_data_as(const ov::Node* op,
     }
 }
 
+template <class TShape,
+          class TData,
+          class TRes = std::vector<TData>,
+          class UnaryOperation = ov::util::Cast<TData>,
+          typename std::enable_if<!std::is_same<TShape, ov::PartialShape>::value>::type* = nullptr>
+std::unique_ptr<TRes> get_input_const_data_as(const ov::Node* op,
+                                              size_t idx,
+                                              const std::map<size_t, HostTensorPtr>& constant_data = {},
+                                              UnaryOperation&& func = ov::util::Cast<TData>()) {
+    auto t = constant_data.find(idx);
+    if (t != constant_data.end()) {
+        return std::unique_ptr<TRes>(
+            new TRes(get_tensor_data_as<TData, TRes>(t->second.get(), std::forward<UnaryOperation>(func))));
+    } else {
+        const auto& constant = ov::as_type_ptr<ov::opset1::Constant>(op->get_input_node_shared_ptr(idx));
+        NODE_VALIDATION_CHECK(op, constant != nullptr, "Static shape inference lacks constant data on port ", idx);
+        const auto& et = constant->get_element_type();
+        const auto& shape = constant->get_shape();
+        return std::unique_ptr<TRes>(new TRes(get_raw_data_as<TData, TRes>(et,
+                                                                           constant->get_data_ptr(),
+                                                                           shape_size(shape),
+                                                                           std::forward<UnaryOperation>(func))));
+    }
+}
+
+template <class TShape,
+          class TData,
+          class TRes = std::vector<TData>,
+          class UnaryOperation = ov::util::Cast<TData>,
+          typename std::enable_if<std::is_same<TShape, ov::PartialShape>::value>::type* = nullptr>
+std::unique_ptr<TRes> get_input_const_data_as(const ov::Node* op,
+                                              size_t idx,
+                                              const std::map<size_t, HostTensorPtr>& constant_data = {},
+                                              UnaryOperation&& func = ov::util::Cast<TData>()) {
+    auto t = constant_data.find(idx);
+    if (t != constant_data.end()) {
+        return std::unique_ptr<TRes>(
+            new TRes(get_tensor_data_as<TData, TRes>(t->second.get(), std::forward<UnaryOperation>(func))));
+        OPENVINO_SUPPRESS_DEPRECATED_START
+    } else if (const auto& constant =
+                   (idx < op->get_input_size()) ? ov::get_constant_from_source(op->input_value(idx)) : nullptr) {
+        OPENVINO_SUPPRESS_DEPRECATED_END
+        const auto& et = constant->get_element_type();
+        const auto& shape = constant->get_shape();
+        return std::unique_ptr<TRes>(new TRes(get_raw_data_as<TData, TRes>(et,
+                                                                           constant->get_data_ptr(),
+                                                                           shape_size(shape),
+                                                                           std::forward<UnaryOperation>(func))));
+    } else {
+        return {};
+    }
+}
+
 /**
  * \brief Get the operator's input const as pointer to vector of specified type.
  *
@@ -331,32 +384,33 @@ std::unique_ptr<TShape> get_input_const_data_as_shape(const ov::Node* op,
     return {};
 }
 
-/**
- * \brief Get the operator's input const as pointer to vector of specified type.
- *
- * The behaviour depends on shape type. The default output type is std::vector<TData> can be replace by other type
- * which if is possible to construct it from constant data vector.
- *
- * \tparam TShape          Shape type which enabled this version (not ov::PartialShape)
- * \tparam TData           Type use to cast input's data.
- * \tparam TRes            Result type which has got default type as std::vector<TData>.
- * \tparam UnaryOperation  Unary function object applied on data with signature (Ret f(const TData &a)).
- *
- * \param op             Pointer to operator.
- * \param idx            Operator's input number.
- * \param constant_data  Map with constant. Default empty.
- * \param func           Unary operation function object.
- *
- * \return Pointer to constant data or nullptr if input has no constant data.
- */
-template <class TShape, class TData, class TRes = std::vector<TData>, class UnaryOperation = ov::util::Cast<TData>>
-std::unique_ptr<TRes> get_input_const_data_as(const ov::Node* op,
-                                              size_t idx,
-                                              const std::map<size_t, HostTensorPtr>& constant_data = {},
-                                              UnaryOperation&& func = ov::util::Cast<TData>()) {
-    const auto tensor_accessor = make_tensor_accessor(constant_data);
-    return get_input_const_data_as<TShape, TData, TRes>(op, idx, tensor_accessor, std::forward<UnaryOperation>(func));
-}
+// /**
+//  * \brief Get the operator's input const as pointer to vector of specified type.
+//  *
+//  * The behaviour depends on shape type. The default output type is std::vector<TData> can be replace by other type
+//  * which if is possible to construct it from constant data vector.
+//  *
+//  * \tparam TShape          Shape type which enabled this version (not ov::PartialShape)
+//  * \tparam TData           Type use to cast input's data.
+//  * \tparam TRes            Result type which has got default type as std::vector<TData>.
+//  * \tparam UnaryOperation  Unary function object applied on data with signature (Ret f(const TData &a)).
+//  *
+//  * \param op             Pointer to operator.
+//  * \param idx            Operator's input number.
+//  * \param constant_data  Map with constant. Default empty.
+//  * \param func           Unary operation function object.
+//  *
+//  * \return Pointer to constant data or nullptr if input has no constant data.
+//  */
+// template <class TShape, class TData, class TRes = std::vector<TData>, class UnaryOperation = ov::util::Cast<TData>>
+// std::unique_ptr<TRes> get_input_const_data_as(const ov::Node* op,
+//                                               size_t idx,
+//                                               const std::map<size_t, HostTensorPtr>& constant_data = {},
+//                                               UnaryOperation&& func = ov::util::Cast<TData>()) {
+//     const auto tensor_accessor = make_tensor_accessor(constant_data);
+//     return get_input_const_data_as<TShape, TData, TRes>(op, idx, tensor_accessor,
+//     std::forward<UnaryOperation>(func));
+// }
 
 /**
  * \brief Get the input const data as shape object.
@@ -381,11 +435,20 @@ std::unique_ptr<TShape> get_input_const_data_as_shape(const ov::Node* op,
                                                       size_t idx,
                                                       const std::map<size_t, HostTensorPtr>& constant_data = {},
                                                       UnaryOperation&& func = ov::util::InTypeRange<TDimValue>()) {
-    const auto tensor_accessor = make_tensor_accessor(constant_data);
-    return get_input_const_data_as_shape<TShape, TDimValue>(op,
-                                                            idx,
-                                                            tensor_accessor,
-                                                            std::forward<UnaryOperation>(func));
+    if (auto s = get_input_const_data_as<TShape, TDimValue, TShape>(op,
+                                                                    idx,
+                                                                    constant_data,
+                                                                    std::forward<UnaryOperation>(func))) {
+        return s;
+    } else {
+        PartialShape shape;
+        OPENVINO_SUPPRESS_DEPRECATED_START
+        if ((idx < op->get_input_size()) && ov::evaluate_as_partial_shape(op->input_value(idx), shape)) {
+            OPENVINO_SUPPRESS_DEPRECATED_END
+            return std::unique_ptr<TShape>(new TShape(std::move(shape)));
+        }
+    }
+    return {};
 }
 
 /**

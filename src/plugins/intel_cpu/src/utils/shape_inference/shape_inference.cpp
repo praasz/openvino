@@ -534,6 +534,7 @@ const IShapeInferCommonFactory::TRegistry IShapeInferCommonFactory::registry{
     _OV_OP_SHAPE_INFER_REG(Split, entryIOC),
     _OV_OP_SHAPE_INFER_REG(Squeeze, entryIOC),
     _OV_OP_SHAPE_INFER_REG(StridedSlice, entryIOC),
+    _OV_OP_SHAPE_INFER_REG(Tile, entryIOC),
     _OV_OP_SHAPE_INFER_REG(TopK, entryIOC),
     _OV_OP_SHAPE_INFER_REG(Transpose, entryIOC),
     _OV_OP_SHAPE_INFER_REG(Unsqueeze, entryIOC),
