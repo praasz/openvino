@@ -124,6 +124,8 @@ function(openvino_developer_export_targets)
         "A list of OpenVINO exported components" FORCE)
 endfunction()
 
+add_compile_options($<$<CONFIG:Release>:$<IF:$<CXX_COMPILER_ID:MSVC>,/Os,-Os>>)
+
 # add target with processed tests model zoo
 if (ENABLE_TESTS)
     include(cmake/test_model_zoo.cmake)
