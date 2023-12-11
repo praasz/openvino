@@ -79,7 +79,7 @@ void unroll_single_iteration(const std::shared_ptr<ov::op::util::SubGraphOp>& su
 ov::Output<ov::Node> create_init_subgraph(const ov::Output<ov::Node>& in_node, ov::pass::NodeRegistry& to) {
     using namespace ov::opset9;
 
-    auto const_zero = to.make<Constant>(in_node.get_element_type(), ov::Shape{1}, 0);
+    auto const_zero = to.make<Constant>(in_node.get_element_type(), ov::Shape{}, 0);
     auto shape_of = to.make<ShapeOf>(in_node);
     auto broadcast = to.make<Broadcast>(const_zero, shape_of);
     return broadcast->output(0);
@@ -94,14 +94,18 @@ std::shared_ptr<ov::opset9::Assign> replace_with_memory(const ov::Input<ov::Node
     using namespace ov::op::util;
 
     ov::Output<ov::Node> read_value_in = input.get_source_output();
+
+    VariableInfo var_info{read_value_in.get_partial_shape(), read_value_in.get_element_type(), variable_name};
+    if (!output.get_partial_shape().compatible(read_value_in.get_partial_shape())) {
+        auto p = to.make<Constant>(ov::element::i64, ov::Shape{output.get_shape().size()}, output.get_shape());
+        read_value_in = to.make<Broadcast>(read_value_in, p)->output(0);
+        var_info.data_shape = read_value_in.get_partial_shape();
+    }
+
     if (use_const_initializer) {
         read_value_in = create_init_subgraph(read_value_in, to);
     }
 
-    VariableInfo var_info{read_value_in.get_partial_shape(), read_value_in.get_element_type(), variable_name};
-    if (!output.get_partial_shape().compatible(read_value_in.get_partial_shape())) {
-        var_info.data_shape = ov::PartialShape::dynamic();
-    }
     auto variable = std::make_shared<Variable>(var_info);
     auto read_value = to.make<ReadValue>(read_value_in, variable);
     input.replace_source_output(read_value->output(0));
