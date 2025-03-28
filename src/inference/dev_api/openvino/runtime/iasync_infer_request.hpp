@@ -15,6 +15,7 @@
 #include "openvino/runtime/common.hpp"
 #include "openvino/runtime/exception.hpp"
 #include "openvino/runtime/iinfer_request.hpp"
+#include "openvino/runtime/iinfer_request_fsm.hpp"
 #include "openvino/runtime/profiling_info.hpp"
 #include "openvino/runtime/tensor.hpp"
 #include "openvino/runtime/threading/itask_executor.hpp"
@@ -155,11 +156,23 @@ public:
     const std::vector<ov::Output<const ov::Node>>& get_outputs() const override;
 
 protected:
-    using Stage = std::pair<std::shared_ptr<ov::threading::ITaskExecutor>, ov::threading::Task>;
+    using Stage = IInferRequestFsm::Stage;
     /**
      * @brief Pipeline is vector of stages
      */
-    using Pipeline = std::vector<Stage>;
+    using Pipeline = IInferRequestFsm::Pipeline;
+
+    /**
+     * @brief Constructor for IAsyncInferRequest
+     * @param request Synchronous infer request
+     * @param task_executor Task executor for pipeline stages
+     * @param callback_executor Task executor for callback
+     * @param fsm State machine for asynchronous request.
+     */
+    IAsyncInferRequest(const std::shared_ptr<IInferRequest>& request,
+                       const std::shared_ptr<ov::threading::ITaskExecutor>& task_executor,
+                       const std::shared_ptr<ov::threading::ITaskExecutor>& callback_executor,
+                       std::unique_ptr<IInferRequestFsm> fsm);
 
     /**
      * @brief Forbids pipeline start and wait for all started pipelines.
@@ -177,7 +190,7 @@ protected:
      */
     void check_cancelled_state() const;
     /**
-     * @brief Performs inference of pipeline in syncronous mode
+     * @brief Performs inference of pipeline in synchronous mode
      * @note Used by Infer which ensures thread-safety and calls this method after.
      */
     virtual void infer_thread_unsafe();
@@ -270,11 +283,10 @@ private:
     }
 
     std::shared_ptr<IInferRequest> m_sync_request;
-
-    std::shared_ptr<ov::threading::ITaskExecutor> m_request_executor;  //!< Used to run inference CPU tasks.
-    std::shared_ptr<ov::threading::ITaskExecutor>
+    ov::threading::ITaskExecutor::Ptr m_request_executor;  //!< Used to run inference CPU tasks.
+    ov::threading::ITaskExecutor::Ptr
         m_callback_executor;  //!< Used to run post inference callback in asynchronous pipline
-    std::shared_ptr<ov::threading::ITaskExecutor>
+    ov::threading::ITaskExecutor::Ptr
         m_sync_callback_executor;  //!< Used to run post inference callback in synchronous pipline
     mutable std::mutex m_mutex;
     std::shared_ptr<std::function<void(std::exception_ptr)>> m_callback;
