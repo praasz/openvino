@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#include "openvino/runtime/ipipeline_process.hpp"
-
 #include <memory>
 
 #include "openvino/runtime/iasync_infer_request.hpp"
+#include "openvino/runtime/ipipeline_process.hpp"
+#include "openvino/runtime/plugin_itt.hpp"
 
 namespace ov {
 // IPipelineProcess
@@ -30,6 +30,7 @@ PipelineProcess::PipelineProcess(std::function<void(void)> notify)
       m_futures{},
       m_promise{},
       m_callback{},
+      m_infer_id{0},
       m_fsm_done_event{std::move(notify)} {}
 
 void PipelineProcess::wait() {
@@ -67,6 +68,8 @@ ov::threading::Task PipelineProcess::make_next_stage_task(
     const std::shared_ptr<ov::threading::ITaskExecutor> callbackExecutor) {
     return std::bind(
         [this, itStage, itEndStage](std::shared_ptr<ov::threading::ITaskExecutor>& callbackExecutor) mutable {
+            // Propagate the inference ID through all subsequent stages for this instance of the pipeline
+            OV_ITT_SCOPED_REGION_BASE(ov::itt::domains::Inference, "Inference::pipeline", "InferenceID", m_infer_id);
             std::exception_ptr currentException = nullptr;
             auto& thisStage = *itStage;
             auto itNextStage = itStage + 1;
@@ -180,6 +183,10 @@ void PipelineProcess::set_callback(std::function<void(std::exception_ptr)> callb
 
 PipelineProcess::DisableCallbackGuard PipelineProcess::disable_callback() {
     return DisableCallbackGuard{*this};
+}
+
+void PipelineProcess::set_infer_id(uint64_t id) {
+    m_infer_id = id;
 }
 
 }  // namespace ov

@@ -53,6 +53,7 @@ public:
     virtual void set_exception(std::exception_ptr) = 0;
     virtual void set_callback(std::function<void(std::exception_ptr)>) = 0;
     virtual DisableCallbackGuard disable_callback() = 0;
+    virtual void set_infer_id(uint64_t) {}
 
 protected:
     enum Stage_e : std::uint8_t { EXECUTOR, TASK };
@@ -74,6 +75,7 @@ public:
     void set_exception(std::exception_ptr) override;
     void set_callback(std::function<void(std::exception_ptr)>) override;
     DisableCallbackGuard disable_callback() override;
+    void set_infer_id(uint64_t id) override;
 
 private:
     void swap_callbacks(callback_func& other) override;
@@ -87,6 +89,7 @@ private:
     Futures m_futures;
     std::promise<void> m_promise;
     std::function<void(std::exception_ptr)> m_callback;  //!< Called on on success or failure of asynchronous request.
+    uint64_t m_infer_id;                                 //!< Id of inference execution, used for ITT markers.
     std::function<void()> m_fsm_done_event;              //!< Called when pipeline done to notify FSM.
 };
 }  // namespace ov

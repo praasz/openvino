@@ -9,7 +9,6 @@
 
 #include "openvino/runtime/isync_infer_request.hpp"
 #include "openvino/runtime/ivariable_state.hpp"
-#include "openvino/runtime/plugin_itt.hpp"
 #include "openvino/runtime/threading/immediate_executor.hpp"
 #include "openvino/runtime/threading/istreams_executor.hpp"
 #include "openvino/runtime/variable_state.hpp"
@@ -45,10 +44,7 @@ ov::IAsyncInferRequest::~IAsyncInferRequest() {
 ov::IAsyncInferRequest::IAsyncInferRequest(const std::shared_ptr<IInferRequest>& request,
                                            const std::shared_ptr<ov::threading::ITaskExecutor>& task_executor,
                                            const std::shared_ptr<ov::threading::ITaskExecutor>& callback_executor)
-    : m_infer_id(0),
-      m_sync_request(request),
-      m_request_executor(task_executor),
-      m_callback_executor(callback_executor) {
+    : IAsyncInferRequest{request, task_executor, callback_executor, std::make_unique<InferRequestFsm>(), {}} {
     if (m_request_executor && m_sync_request)
         m_pipeline = {{m_request_executor, [this] {
                            m_sync_request->infer();
@@ -86,50 +82,21 @@ ov::IAsyncInferRequest::IAsyncInferRequest(const std::shared_ptr<IInferRequest>&
 }
 
 void ov::IAsyncInferRequest::wait() {
-    // Just use the last '_futures' member to wait pipeline completion
-    auto future = [this] {
-        std::lock_guard lock{m_mutex};
-        return m_futures.empty() ? std::shared_future<void>{} : m_futures.back();
-    }();
-    if (future.valid()) {
-        future.get();
-    }
+    m_pipeline_process->wait();
 }
 
 bool ov::IAsyncInferRequest::wait_for(const std::chrono::milliseconds& timeout) {
     OPENVINO_ASSERT(timeout >= std::chrono::milliseconds{0}, "Timeout can't be less than 0 for InferRequest::wait().");
-
-    // Just use the last '_futures' member to wait pipeline completion
-    auto future = [this] {
-        std::lock_guard lock{m_mutex};
-        return m_futures.empty() ? std::shared_future<void>{} : m_futures.back();
-    }();
-
-    if (!future.valid()) {
-        return false;
-    }
-
-    const auto status = future.wait_for(std::chrono::milliseconds{timeout});
-
-    if (std::future_status::ready == status) {
-        future.get();
-        return true;
-    } else {
-        return false;
-    }
+    return m_pipeline_process->wait_for(timeout);
 }
 
 void ov::IAsyncInferRequest::cancel() {
-    std::lock_guard lock{m_mutex};
-    if (m_state == InferState::BUSY) {
-        m_state = InferState::CANCELLED;
-    }
+    m_fsm->on_event(InferRequestFsm::CancelEvent{});
 }
 
 void ov::IAsyncInferRequest::set_callback(std::function<void(std::exception_ptr)> callback) {
     check_state();
-    std::lock_guard lock{m_mutex};
-    m_callback = std::make_shared<std::function<void(std::exception_ptr)>>(std::move(callback));
+    m_pipeline_process->set_callback(std::move(callback));
 }
 
 std::vector<ov::SoPtr<ov::IVariableState>> ov::IAsyncInferRequest::query_state() const {
@@ -137,15 +104,17 @@ std::vector<ov::SoPtr<ov::IVariableState>> ov::IAsyncInferRequest::query_state()
     return m_sync_request->query_state();
 }
 
-void ov::IAsyncInferRequest::infer_thread_unsafe() {
-    InferRequestFsm::StartEvent event{m_sync_pipeline.begin(),
-                                      m_sync_pipeline.end(),
-                                      m_sync_callback_executor,
-                                      m_pipeline_process->sync_pipeline_func()};
+void ov::IAsyncInferRequest::start_pipeline(Pipeline& pipeline,
+                                            const threading::ITaskExecutor::Ptr& callback_executor,
+                                            IPipelineProcess::pipeline_process_func process_func,
+                                            void (IPipelineProcess::*prepare)()) {
+    InferRequestFsm::StartEvent event{pipeline.begin(), pipeline.end(), callback_executor, std::move(process_func)};
 
     try {
         if (m_fsm->is_ready()) {
-            m_pipeline_process->prepare_sync();
+            m_infer_id = g_inference_uid++;
+            m_pipeline_process->set_infer_id(m_infer_id);
+            (m_pipeline_process.get()->*prepare)();
         }
         m_fsm->on_event(event);
     } catch (...) {
@@ -153,82 +122,18 @@ void ov::IAsyncInferRequest::infer_thread_unsafe() {
     }
 }
 
+void ov::IAsyncInferRequest::infer_thread_unsafe() {
+    start_pipeline(m_sync_pipeline,
+                   m_sync_callback_executor,
+                   m_pipeline_process->sync_pipeline_func(),
+                   &IPipelineProcess::prepare_sync);
+}
+
 void ov::IAsyncInferRequest::start_async_thread_unsafe() {
-    run_first_stage(m_pipeline.begin(), m_pipeline.end(), m_callback_executor);
-}
-
-void ov::IAsyncInferRequest::run_first_stage(const Pipeline::iterator itBeginStage,
-                                             const Pipeline::iterator itEndStage,
-                                             const std::shared_ptr<ov::threading::ITaskExecutor> callbackExecutor) {
-    m_infer_id = g_inference_uid++;
-    auto& firstStageExecutor = std::get<Stage_e::EXECUTOR>(*itBeginStage);
-    OPENVINO_ASSERT(nullptr != firstStageExecutor);
-    firstStageExecutor->run(make_next_stage_task(itBeginStage, itEndStage, std::move(callbackExecutor)));
-}
-
-ov::threading::Task ov::IAsyncInferRequest::make_next_stage_task(
-    const Pipeline::iterator itStage,
-    const Pipeline::iterator itEndStage,
-    const std::shared_ptr<ov::threading::ITaskExecutor> callbackExecutor) {
-    return std::bind(
-        [this, itStage, itEndStage](std::shared_ptr<ov::threading::ITaskExecutor>& callbackExecutor) mutable {
-            // Propagate the inference ID through all subsequent stages for this instance of the pipeline
-            OV_ITT_SCOPED_REGION_BASE(ov::itt::domains::Inference, "Inference::pipeline", "InferenceID", m_infer_id);
-            std::exception_ptr currentException = nullptr;
-            auto& thisStage = *itStage;
-            auto itNextStage = itStage + 1;
-            try {
-                auto& stageTask = std::get<Stage_e::TASK>(thisStage);
-                OPENVINO_ASSERT(nullptr != stageTask);
-                stageTask();
-                if (itEndStage != itNextStage) {
-                    auto& nextStage = *itNextStage;
-                    auto& nextStageExecutor = std::get<Stage_e::EXECUTOR>(nextStage);
-                    OPENVINO_ASSERT(nullptr != nextStageExecutor);
-                    nextStageExecutor->run(make_next_stage_task(itNextStage, itEndStage, std::move(callbackExecutor)));
-                }
-            } catch (...) {
-                currentException = std::current_exception();
-            }
-
-            if ((itEndStage == itNextStage) || (nullptr != currentException)) {
-                auto lastStageTask = [this, currentException]() mutable {
-                    std::promise<void> promise;
-                    std::shared_ptr<std::function<void(std::exception_ptr)>> callback;
-                    {
-                        std::lock_guard lock{m_mutex};
-                        m_state = InferState::IDLE;
-                        promise = std::move(m_promise);
-                        callback = m_callback;
-                    }
-                    if (callback && *callback) {
-                        try {
-                            (*callback)(currentException);
-                        } catch (...) {
-                            currentException = std::current_exception();
-                        }
-                    }
-                    if (nullptr == currentException) {
-                        promise.set_value();
-                    } else {
-                        promise.set_exception(currentException);
-                    }
-                };
-
-                if (nullptr == callbackExecutor) {
-                    lastStageTask();
-                } else {
-                    callbackExecutor->run(std::move(lastStageTask));
-                }
-            }
-        },
-        std::move(callbackExecutor));
-}
-
-void ov::IAsyncInferRequest::start_async() {
-    infer_impl([this] {
-        start_async_thread_unsafe();
-    });
+    start_pipeline(m_pipeline,
+                   m_callback_executor,
+                   m_pipeline_process->async_pipeline_func(),
+                   &IPipelineProcess::prepare_async);
 }
 
 void ov::IAsyncInferRequest::check_state() const {

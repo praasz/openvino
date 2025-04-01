@@ -207,89 +207,21 @@ protected:
 
     Pipeline m_pipeline;       //!< Pipeline variable that should be filled by inherited class.
     Pipeline m_sync_pipeline;  //!< Synchronous pipeline variable that should be filled by inherited class.
-    uint64_t m_infer_id;       //!< Id of inference request execution. Should be increased on each inference start.
+    uint64_t m_infer_id = 0;   //!< Id of inference request execution. Should be increased on each inference start.
+    std::unique_ptr<InferRequestFsm> m_fsm;                //!< State machine for asynchronous request.
+    std::unique_ptr<IPipelineProcess> m_pipeline_process;  //!< Pipeline process for request.
 
 private:
-    enum InferState { IDLE, BUSY, CANCELLED, STOP };
-    using Futures = std::vector<std::shared_future<void>>;
-    enum Stage_e : std::uint8_t { EXECUTOR, TASK };
-    InferState m_state = InferState::IDLE;
-    Futures m_futures;
-    std::promise<void> m_promise;
-
-    friend struct DisableCallbackGuard;
-    struct DisableCallbackGuard {
-        explicit DisableCallbackGuard(IAsyncInferRequest* this_) : _this{this_} {
-            std::lock_guard<std::mutex> lock{_this->m_mutex};
-            std::swap(m_callback, _this->m_callback);
-        }
-        ~DisableCallbackGuard() {
-            std::lock_guard<std::mutex> lock{_this->m_mutex};
-            _this->m_callback = m_callback;
-        }
-        IAsyncInferRequest* _this = nullptr;
-        std::shared_ptr<std::function<void(std::exception_ptr)>> m_callback;
-    };
-
-    void run_first_stage(const Pipeline::iterator itBeginStage,
-                         const Pipeline::iterator itEndStage,
-                         const std::shared_ptr<ov::threading::ITaskExecutor> callbackExecutor = {});
-
-    ov::threading::Task make_next_stage_task(const Pipeline::iterator itStage,
-                                             const Pipeline::iterator itEndStage,
-                                             const std::shared_ptr<ov::threading::ITaskExecutor> callbackExecutor);
-
-    template <typename F>
-    void infer_impl(const F& f) {
-        check_tensors();
-        InferState state = InferState::IDLE;
-        {
-            std::lock_guard lock{m_mutex};
-            state = m_state;
-            switch (m_state) {
-            case InferState::BUSY:
-                ov::Busy::create("Infer Request is busy");
-            case InferState::CANCELLED:
-                ov::Cancelled::create("Infer Request was canceled");
-            case InferState::IDLE: {
-                m_futures.erase(std::remove_if(std::begin(m_futures),
-                                               std::end(m_futures),
-                                               [](const std::shared_future<void>& future) {
-                                                   if (future.valid()) {
-                                                       return (std::future_status::ready ==
-                                                               future.wait_for(std::chrono::milliseconds{0}));
-                                                   } else {
-                                                       return true;
-                                                   }
-                                               }),
-                                m_futures.end());
-                m_promise = {};
-                m_futures.emplace_back(m_promise.get_future().share());
-            } break;
-            case InferState::STOP:
-                break;
-            }
-            m_state = InferState::BUSY;
-        }
-        if (state != InferState::STOP) {
-            try {
-                f();
-            } catch (...) {
-                m_promise.set_exception(std::current_exception());
-                std::lock_guard<std::mutex> lock{m_mutex};
-                m_state = InferState::IDLE;
-                throw;
-            }
-        }
-    }
+    void start_pipeline(Pipeline& pipeline,
+                        const threading::ITaskExecutor::Ptr& callback_executor,
+                        IPipelineProcess::pipeline_process_func process_func,
+                        void (IPipelineProcess::*prepare)());
 
     std::shared_ptr<IInferRequest> m_sync_request;
     threading::ITaskExecutor::Ptr m_request_executor;   //!< Used to run inference CPU tasks.
     threading::ITaskExecutor::Ptr m_callback_executor;  //!< Used to run post inference callback in asynchronous pipline
     threading::ITaskExecutor::Ptr
         m_sync_callback_executor;  //!< Used to run post inference callback in synchronous pipline
-    mutable std::mutex m_mutex;
-    std::shared_ptr<std::function<void(std::exception_ptr)>> m_callback;
 };
 
 }  // namespace ov
