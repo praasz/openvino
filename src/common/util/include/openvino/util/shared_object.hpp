@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <memory>
 
 #include "openvino/util/util.hpp"
@@ -21,16 +22,8 @@ namespace util {
  * @param path Full or relative path to the plugin library
  * @return Reference to shared object
  */
-std::shared_ptr<void> load_shared_object(const char* path);
+std::shared_ptr<void> load_shared_object(const std::filesystem::path& path);
 
-#ifdef OPENVINO_ENABLE_UNICODE_PATH_SUPPORT
-/**
- * @brief Loads a library with the wide char name specified.
- * @param path Full or relative path to the plugin library
- * @return Reference to shared object
- */
-std::shared_ptr<void> load_shared_object(const wchar_t* path);
-#endif  // OPENVINO_ENABLE_UNICODE_PATH_SUPPORT
 /**
  * @brief Searches for a function symbol in the loaded module
  * @param shared_object shared object reference

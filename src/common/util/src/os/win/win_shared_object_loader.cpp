@@ -73,54 +73,7 @@
 
 namespace ov {
 namespace util {
-std::shared_ptr<void> load_shared_object(const char* path) {
-#if defined(OPENVINO_ENABLE_UNICODE_PATH_SUPPORT) && defined(_WIN32)
-    return ov::util::load_shared_object(ov::util::string_to_wstring(path).c_str());
-#else
-    void* shared_object = nullptr;
-    using GetDllDirectoryA_Fnc = DWORD (*)(DWORD, LPSTR);
-    GetDllDirectoryA_Fnc IEGetDllDirectoryA = nullptr;
-    if (HMODULE hm = GetModuleHandleW(L"kernel32.dll")) {
-        IEGetDllDirectoryA = reinterpret_cast<GetDllDirectoryA_Fnc>(GetProcAddress(hm, "GetDllDirectoryA"));
-    }
-#if !WINAPI_PARTITION_SYSTEM
-    // ExcludeCurrentDirectory
-    if (IEGetDllDirectoryA && IEGetDllDirectoryA(0, NULL) <= 1) {
-        SetDllDirectoryA("");
-    }
-    // LoadPluginFromDirectory
-    if (IEGetDllDirectoryA) {
-        DWORD nBufferLength = IEGetDllDirectoryA(0, NULL);
-        std::vector<CHAR> lpBuffer(nBufferLength);
-        IEGetDllDirectoryA(nBufferLength, &lpBuffer.front());
-
-        // GetDirname
-        auto dirname = get_directory(path);
-
-        SetDllDirectoryA(dirname.c_str());
-        shared_object = LoadLibraryA(path);
-
-        SetDllDirectoryA(&lpBuffer.front());
-    }
-#endif
-    if (!shared_object) {
-        shared_object = LoadLibraryA(path);
-    }
-
-    if (!shared_object) {
-        char cwd[1024];
-        std::stringstream ss;
-        ss << "Cannot load library '" << path << "': " << GetLastError() << " from cwd: " << _getcwd(cwd, sizeof(cwd));
-        throw std::runtime_error(ss.str());
-    }
-    return {shared_object, [](void* shared_object) {
-                FreeLibrary(reinterpret_cast<HMODULE>(shared_object));
-            }};
-#endif
-}
-
-#ifdef OPENVINO_ENABLE_UNICODE_PATH_SUPPORT
-std::shared_ptr<void> load_shared_object(const wchar_t* path) {
+std::shared_ptr<void> load_shared_object(const std::filesystem::path& path) {
     void* shared_object = nullptr;
     using GetDllDirectoryW_Fnc = DWORD (*)(DWORD, LPWSTR);
     static GetDllDirectoryW_Fnc IEGetDllDirectoryW = nullptr;
@@ -128,7 +81,7 @@ std::shared_ptr<void> load_shared_object(const wchar_t* path) {
         IEGetDllDirectoryW = reinterpret_cast<GetDllDirectoryW_Fnc>(GetProcAddress(hm, "GetDllDirectoryW"));
     }
     // ExcludeCurrentDirectory
-#    if !WINAPI_PARTITION_SYSTEM
+#if !WINAPI_PARTITION_SYSTEM
     if (IEGetDllDirectoryW && IEGetDllDirectoryW(0, NULL) <= 1) {
         SetDllDirectoryW(L"");
     }
@@ -136,28 +89,23 @@ std::shared_ptr<void> load_shared_object(const wchar_t* path) {
         DWORD nBufferLength = IEGetDllDirectoryW(0, NULL);
         std::vector<WCHAR> lpBuffer(nBufferLength);
         IEGetDllDirectoryW(nBufferLength, &lpBuffer.front());
-        auto dirname = [path] {
-            auto pos = wcsrchr(path, '\\');
-            if (pos == nullptr) {
-                return std::wstring{path};
-            }
-            std::wstring original(path);
-            original[pos - path] = 0;
-            return original;
-        }();
+
+        auto dirname = get_directory(path);
+
         SetDllDirectoryW(dirname.c_str());
+
         shared_object = LoadLibraryW(path);
 
         SetDllDirectoryW(&lpBuffer.front());
     }
-#    endif
+#endif
     if (!shared_object) {
         shared_object = LoadLibraryW(path);
     }
     if (!shared_object) {
         char cwd[1024];
         std::stringstream ss;
-        ss << "Cannot load library '" << ov::util::wstring_to_string(std::wstring(path)) << "': " << GetLastError()
+        ss << "Cannot load library '" << path.string() << "': " << GetLastError()
            << " from cwd: " << _getcwd(cwd, sizeof(cwd));
         throw std::runtime_error(ss.str());
     }
@@ -165,7 +113,6 @@ std::shared_ptr<void> load_shared_object(const wchar_t* path) {
                 FreeLibrary(reinterpret_cast<HMODULE>(shared_object));
             }};
 }
-#endif
 
 void* get_symbol(const std::shared_ptr<void>& shared_object, const char* symbol_name) {
     if (!shared_object) {

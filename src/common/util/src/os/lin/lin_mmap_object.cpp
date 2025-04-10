@@ -63,23 +63,24 @@ class MapHolder : public MappedMemory {
 public:
     MapHolder() = default;
 
-    void set(const std::string& path) {
+    void set(const std::filesystem::path& path) {
         int prot = PROT_READ;
         int mode = O_RDONLY;
         struct stat sb = {};
         m_handle = HandleHolder(open(path.c_str(), mode));
         if (m_handle.get() == -1) {
-            throw std::runtime_error("Can not open file " + path +
+            throw std::runtime_error("Can not open file " + path.string() +
                                      " for mapping. Ensure that file exists and has appropriate permissions");
         }
         if (fstat(m_handle.get(), &sb) == -1) {
-            throw std::runtime_error("Can not get file size for " + path);
+            throw std::runtime_error("Can not get file size for " + path.string());
         }
         m_size = sb.st_size;
         if (m_size > 0) {
             m_data = mmap(nullptr, m_size, prot, MAP_PRIVATE, m_handle.get(), 0);
             if (m_data == MAP_FAILED) {
-                throw std::runtime_error("Can not create file mapping for " + path + ", err=" + std::strerror(errno));
+                throw std::runtime_error("Can not create file mapping for " + path.string() +
+                                         ", err=" + std::strerror(errno));
             }
         } else {
             m_data = MAP_FAILED;
@@ -101,10 +102,9 @@ public:
     }
 };
 
-std::shared_ptr<ov::MappedMemory> load_mmap_object(const std::string& path) {
+std::shared_ptr<ov::MappedMemory> load_mmap_object(const std::filesystem::path& path) {
     auto holder = std::make_shared<MapHolder>();
     holder->set(path);
     return holder;
 }
-
 }  // namespace ov
