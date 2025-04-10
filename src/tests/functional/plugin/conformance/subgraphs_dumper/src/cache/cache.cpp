@@ -21,7 +21,7 @@ bool ICache::serialize_model(const std::pair<std::shared_ptr<ov::Model>, ov::con
     ov::conformance::MetaInfo meta = graph_info.second;
 
     std::string model_name = model->get_friendly_name();
-    std::string abs_searilization_dir = ov::util::path_join({ m_serialization_dir, rel_serialization_dir }).string();
+    auto abs_searilization_dir = ov::util::path_join({m_serialization_dir, rel_serialization_dir});
     std::string xml_path =  ov::util::path_join({ abs_searilization_dir, model_name + ".xml" }).string();
     std::string bin_path = ov::util::path_join({ abs_searilization_dir, model_name + ".bin" }).string();
     std::string meta_path = ov::util::path_join({ abs_searilization_dir, model_name + ".meta" }).string();

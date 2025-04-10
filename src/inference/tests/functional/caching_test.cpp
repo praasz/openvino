@@ -162,10 +162,10 @@ public:
     std::shared_ptr<ov::Model> m_model;
     std::map<std::string, std::shared_ptr<ov::Model>> m_models;
 
-    static std::string get_mock_engine_path() {
+    static std::filesystem::path get_mock_engine_path() {
         std::string mockEngineName("mock_engine");
-        return ov::util::make_plugin_library_name(ov::test::utils::getExecutableDirectory(),
-                                                  mockEngineName + OV_BUILD_POSTFIX);
+        return {ov::util::make_plugin_library_name(ov::test::utils::getExecutableDirectory(),
+                                                   mockEngineName + OV_BUILD_POSTFIX)};
     }
 
     void initParamTest() {
@@ -215,8 +215,8 @@ public:
         initParamTest();
         mockPlugin = std::make_shared<MockCachingIPlugin>();
         setupMock(*mockPlugin);
-        std::string libraryPath = get_mock_engine_path();
-        sharedObjectLoader = ov::util::load_shared_object(libraryPath.c_str());
+        const auto libraryPath = get_mock_engine_path();
+        sharedObjectLoader = ov::util::load_shared_object(libraryPath);
         injectPlugin = make_std_function<void(ov::IPlugin*)>("InjectPlugin");
 
         ov::pass::Manager manager;

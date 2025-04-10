@@ -26,10 +26,10 @@
 
 namespace {
 
-std::string get_mock_engine_path() {
+std::filesystem::path get_mock_engine_path() {
     std::string mockEngineName("mock_engine");
-    return ov::util::make_plugin_library_name(ov::test::utils::getExecutableDirectory(),
-                                              mockEngineName + OV_BUILD_POSTFIX);
+    return {ov::util::make_plugin_library_name(ov::test::utils::getExecutableDirectory(),
+                                               mockEngineName + OV_BUILD_POSTFIX)};
 }
 
 template <class T>
@@ -608,9 +608,9 @@ void ov::auto_plugin::tests::AutoFuncTests::reg_plugin(ov::Core& core,
                                                        std::shared_ptr<ov::IPlugin>& plugin,
                                                        const std::string& device_name,
                                                        const ov::AnyMap& properties) {
-    std::string libraryPath = get_mock_engine_path();
+    auto libraryPath = get_mock_engine_path();
     if (!m_so)
-        m_so = ov::util::load_shared_object(libraryPath.c_str());
+        m_so = ov::util::load_shared_object(libraryPath);
     plugin->set_device_name(device_name);
     std::function<void(ov::IPlugin*)> injectProxyEngine = make_std_function<void(ov::IPlugin*)>(m_so, "InjectPlugin");
 

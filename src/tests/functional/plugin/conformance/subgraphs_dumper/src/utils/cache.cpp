@@ -15,7 +15,7 @@ namespace util {
 
 void save_model_status_to_file(const std::map<ModelCacheStatus, std::vector<std::string>>& caching_status,
                                const std::string& output_dir) {
-    std::string cache_status_path = ov::util::path_join({output_dir, "model_caching_status"}).string();
+    auto cache_status_path = ov::util::path_join({output_dir, "model_caching_status"});
     if (!ov::util::directory_exists(cache_status_path)) {
         ov::util::create_directory_recursive(cache_status_path);
     }
