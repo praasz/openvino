@@ -9,26 +9,12 @@
 #include <map>
 
 #include "common_test_utils/ov_tensor_utils.hpp"
+#include "openvino/core/type/element_type_info.hpp"
 #include "openvino/core/type/element_type_traits.hpp"
 
 namespace ov {
 namespace test {
 namespace utils {
-
-static const std::vector<element::Type>& get_known_types() {
-    static const auto known_types = [] {
-        using namespace ov::element;
-        constexpr size_t enum_count = static_cast<std::underlying_type_t<Type_t>>(Type_t::f8e8m0);
-
-        std::vector<Type> types(enum_count);
-        for (size_t idx = 1, i = 0; i < types.size(); ++idx, ++i) {
-            types[i] = Type{static_cast<Type_t>(idx)};
-        }
-        return types;
-    }();
-
-    return known_types;
-}
 
 static ov::test::utils::InputGenerateData get_range_by_type(
     ov::element::Type elemType,
@@ -120,7 +106,7 @@ struct RangeByType {
     std::map<ov::element::Type, ov::test::utils::InputGenerateData> data;
 
     RangeByType() {
-        for (const auto& type : get_known_types()) {
+        for (const auto& type : ov::element::known_types) {
             data[type] = get_range_by_type(type);
         }
     }

@@ -6,6 +6,7 @@
 
 #include "dimension_util.hpp"
 #include "itt.hpp"
+#include "openvino/core/type/element_type_info.hpp"
 #include "openvino/core/validation_util.hpp"
 #include "openvino/op/op.hpp"
 
@@ -58,9 +59,9 @@ inline void input_check(const ov::Node* node,
 
 std::vector<ov::element::Type> get_real_types() {
     std::vector<ov::element::Type> real_types;
-    for (const auto& type : ov::element::Type::get_known_types()) {
-        if (type->is_real()) {
-            real_types.push_back(*type);
+    for (const auto& type : ov::element::known_types) {
+        if (type.is_real()) {
+            real_types.push_back(type);
         }
     }
     return real_types;

@@ -12,6 +12,7 @@
 #include "common_test_utils/ov_tensor_utils.hpp"
 #include "common_test_utils/type_ranges.hpp"
 #include "openvino/core/node.hpp"
+#include "openvino/core/type/element_type_info.hpp"
 #include "openvino/op/ops.hpp"
 #include "ov_ops/augru_cell.hpp"
 #include "ov_ops/augru_sequence.hpp"
@@ -34,7 +35,7 @@ struct Range {
         max_known_port = std::max(static_cast<int>(max_known_port), 1);
         for (size_t port = 0; port < max_known_port; port++) {
             std::map<ov::element::Type, ov::test::utils::InputGenerateData> type_map;
-            for (const auto& type : get_known_types()) {
+            for (const auto& type : element::known_types) {
                 ov::test::utils::InputGenerateData new_range = rangeByType.get_range(type);
                 if (type.is_real() && port < real_port_ranges.size()) {
                     new_range.correct_range(real_port_ranges.at(port));
