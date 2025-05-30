@@ -20,9 +20,6 @@ constexpr size_t idx(Type_t e) noexcept {
     return static_cast<std::underlying_type_t<Type_t>>(e);
 }
 
-// Update it when new type is added
-constexpr size_t enum_types_size = idx(f8e8m0) + 1;
-
 template <class Array>
 constexpr TypeInfo type_info(size_t bitwidth,
                              bool is_real,
@@ -61,7 +58,7 @@ constexpr auto string_aliases = util::make_array("STRING");
 constexpr auto f4e2m1_aliases = util::make_array("F4E2M1");
 constexpr auto f8e8m0_aliases = util::make_array("F8E8M0");
 
-static constexpr std::array<TypeInfo, enum_types_size> types_info = {
+static constexpr std::array<TypeInfo, number_of_types> types_info = {
     type_info(0, false, false, false, "dynamic", "dynamic", dynamic_aliases),                     // dynamic
     type_info(8, false, true, false, "char", "boolean", boolean_aliases),                         // boolean
     type_info(16, true, true, false, "bfloat16", "bf16", bf16_aliases),                           // bf16
@@ -115,15 +112,6 @@ Type type_from_string(const std::string& type) {
     OPENVINO_ASSERT(is_valid_type_idx(type_idx), "Unsupported element type: ", type);
     return {static_cast<Type_t>(type_idx)};
 }
-
-// generate known types automatically
-static constexpr auto known_types = [] {
-    std::array<Type, enum_types_size - 1> types;
-    for (size_t idx = 1, i = 0; i < types.size(); ++idx, ++i) {
-        types[i] = Type{static_cast<Type_t>(idx)};
-    }
-    return types;
-}();
 }  // namespace
 
 const TypeInfo& get_type_info(Type_t type) {
