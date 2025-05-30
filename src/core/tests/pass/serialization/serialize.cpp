@@ -12,6 +12,7 @@
 #include "common_test_utils/graph_comparator.hpp"
 #include "common_test_utils/test_common.hpp"
 #include "openvino/core/graph_util.hpp"
+#include "openvino/core/type/element_type_info.hpp"
 #include "openvino/op/add.hpp"
 #include "openvino/util/file_util.hpp"
 #include "read_ir.hpp"
@@ -51,29 +52,35 @@ protected:
 
 class SerializePassTestP : public SerializePassTest, public testing::WithParamInterface<element::Type> {};
 
+constexpr auto is_numerical = [](auto&& type) -> bool {
+    return type != element::boolean && type != element::string;
+};
+
+constexpr size_t num_of_numerical_types = [] {
+    size_t count = 0;
+    for (const auto& type : element::known_types) {
+        if (is_numerical(type)) {
+            ++count;
+        }
+    }
+    return count;
+}();
+
+static constexpr auto numerical_types = [] {
+    std::array<element::Type, num_of_numerical_types> types;
+    size_t i = 0;
+    for (auto&& type : element::known_types) {
+        if (is_numerical(type)) {
+            types[i] = type;
+            ++i;
+        }
+    }
+    return types;
+}();
+
 INSTANTIATE_TEST_SUITE_P(numeric_types,
                          SerializePassTestP,
-                         testing::Values(element::bf16,
-                                         element::f16,
-                                         element::f32,
-                                         element::f64,
-                                         element::i4,
-                                         element::i8,
-                                         element::i16,
-                                         element::i32,
-                                         element::i64,
-                                         element::u1,
-                                         element::u2,
-                                         element::u4,
-                                         element::u8,
-                                         element::u16,
-                                         element::u32,
-                                         element::u64,
-                                         element::nf4,
-                                         element::f8e4m3,
-                                         element::f8e5m2,
-                                         element::f4e2m1,
-                                         element::f8e8m0),
+                         testing::ValuesIn(numerical_types),
                          testing::PrintToStringParamName());
 
 TEST_P(SerializePassTestP, serialize_simple_model_with_constant) {
