@@ -1137,12 +1137,12 @@ void ngfunction_2_ir(pugi::xml_node& netXml,
                     port.append_attribute("id").set_value(port_id++);
 
                     const auto& rt_info = o.get_tensor().get_rt_info();
-                    auto port_element_type =
+                    const auto& port_element_type =
                         is_fp16_compression_postponed(rt_info) ? ov::element::f16 : o.get_element_type();
 
                     port.append_attribute("precision").set_value(get_precision_name(port_element_type).c_str());
 
-                    if (const auto& tensor_names = o.get_tensor().get_names(); !tensor_names.empty()) {
+                    if (const auto& tensor_names = o.get_names(); !deterministic && !tensor_names.empty()) {
                         port.append_attribute("names").set_value(serialize_tensor_names(tensor_names).c_str());
                     }
 

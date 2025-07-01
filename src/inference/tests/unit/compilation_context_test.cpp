@@ -13,18 +13,20 @@
 
 #include "common_test_utils/common_utils.hpp"
 #include "common_test_utils/test_constants.hpp"
+#include "openvino/core/model_util.hpp"
 #include "openvino/core/preprocess/pre_post_process.hpp"
 #include "openvino/op/add.hpp"
 #include "openvino/op/constant.hpp"
 #include "openvino/op/multiply.hpp"
 #include "openvino/op/parameter.hpp"
+#include "openvino/op/split.hpp"
+#include "openvino/op/util/node_util.hpp"
 #include "transformations/rt_info/fused_names_attribute.hpp"
 #include "transformations/rt_info/primitives_priority_attribute.hpp"
 
-using namespace ov;
 using namespace ::testing;
-using namespace std::chrono;
 
+namespace ov::test {
 class FileGuard {
     std::string m_fileName;
 
@@ -111,8 +113,8 @@ TEST_F(NetworkContext_CalcFileInfoTests, SizeModified) {
 static std::shared_ptr<ov::Model> create_simple_model() {
     // This example is taken from docs, shows how to create ov::Model
     //
-    // Parameter--->Multiply--->Add--->Result
-    //    Constant---'          /
+    // Parameter--->Multiply--->Add--->Split--->Result
+    //    Constant---'          /           `-->Result
     //              Constant---'
 
     // Create opset6::Parameter operation with static shape
@@ -131,16 +133,22 @@ static std::shared_ptr<ov::Model> create_simple_model() {
     add_constant->set_friendly_name("add_constant");
     add_constant->get_output_tensor(0).set_names({"add_constant"});
     auto add = std::make_shared<ov::op::v1::Add>(mul, add_constant);
+    add->output(0).set_names({util::make_default_tensor_name(add->output(0))});
     add->set_friendly_name("add");
-    add->get_output_tensor(0).set_names({"add"});
 
-    // Create opset3::Result operation
-    auto res = std::make_shared<ov::op::v0::Result>(add);
+    auto split = std::make_shared<op::v1::Split>(add, op::v0::Constant::create(element::i64, Shape{}, {2}), 2);
+    for (auto& output : split->outputs()) {
+        output.set_names({util::make_default_tensor_name(output)});
+    }
+
+    // Create Results operation
+    auto res = std::make_shared<op::v0::Result>(split->output(0));
     res->set_friendly_name("res");
+    auto res2 = std::make_shared<op::v0::Result>(split->output(1));
+    res2->set_friendly_name("res2");
 
     // Create ov function
-    auto model = std::make_shared<ov::Model>(ov::ResultVector{res}, ov::ParameterVector{data});
-    return model;
+    return std::make_shared<Model>(ResultVector{res, res}, ParameterVector{data}, "simple_model");
 }
 
 static void checkCustomRt(const std::function<void(Node::RTMap&)>& emptyCb,
@@ -309,7 +317,7 @@ TEST(NetworkContext, HashWithTensorNames) {
 
     ASSERT_EQ(ov::ModelCache::compute_hash(fun1, {}), ov::ModelCache::compute_hash(fun2, {}));
 
-    ASSERT_NE(ov::ModelCache::compute_hash(fun2, {}), ov::ModelCache::compute_hash(fun3, {}));
+    ASSERT_EQ(ov::ModelCache::compute_hash(fun2, {}), ov::ModelCache::compute_hash(fun3, {}));
 }
 
 TEST(NetworkContext, HashWithDifferentResults) {
@@ -324,6 +332,7 @@ TEST(NetworkContext, HashWithDifferentResults) {
 
 // Verify all internal hash calculations are thread-safe (like ov::Model serialization)
 TEST(NetworkContext, HashOfSameMultiThreading) {
+    using namespace std::chrono;
     auto net1 = create_simple_model();
     auto net2 = create_simple_model();
     std::atomic_bool fail{false};
@@ -407,3 +416,4 @@ TEST(NetworkContext, HashOfSameModelWithClone) {
     auto model2_clone = model2->clone();
     ASSERT_EQ(ov::ModelCache::compute_hash(model2, {}), ov::ModelCache::compute_hash(model2_clone, {}));
 }
+}  // namespace ov::test
