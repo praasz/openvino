@@ -73,16 +73,16 @@ void stripDeviceName(std::string& device, const std::string& substr) {
 /**
  * @brief Converts / flattens ov::device::properties from
  * @code
- * core.compile_model(model, "GPU", ov::device::properties("GPU", ov::cache_dir("/tmp")));
+ * core.compile_model(model, "GPU", ov::device::properties("GPU", ov::cache_path("/tmp")));
  * // or
  * core.compile_model(model, "GPU", ov::device::properties({
- *   { "GPU", ov::cache_dir("/tmp") },
- *   { "CPU", ov::cache_dir("") }
+ *   { "GPU", ov::cache_path("/tmp") },
+ *   { "CPU", ov::cache_path("") }
  * }));
  * @endcode
  * To the form:
  * @code
- * core.compile_model(model, "GPU", ov::cache_dir("/tmp"));
+ * core.compile_model(model, "GPU", ov::cache_path("/tmp"));
  * @endcode
  *
  * @param user_device_name A device name for which properties flattening is performed
@@ -208,6 +208,7 @@ void clean_batch_properties(const std::string& device_name, ov::AnyMap& config, 
 }
 
 static const auto core_properties_names = ov::util::make_array(ov::cache_dir.name(),
+                                                               ov::cache_path.name(),
                                                                ov::enable_mmap.name(),
                                                                ov::force_tbb_terminate.name(),
                                                                ov::cache_model_path.name());
@@ -395,6 +396,25 @@ ov::Parsed parse_device_config(const std::string& device_name,
         }
     }
     return parsed;
+}
+
+std::optional<std::filesystem::path> get_cache_path_from_config(const ov::AnyMap& config) {
+    const auto cache_dir_it = config.find(ov::cache_dir.name());
+    const auto cache_path_it = config.find(ov::cache_path.name());
+
+    if (cache_dir_it != config.end() && cache_path_it != config.end()) {
+        OPENVINO_THROW("Set cache path by '",
+                       ov::cache_path.name(),
+                       "' or '",
+                       ov::cache_dir.name(),
+                       "' property. Both setin configuration.");
+    } else if (cache_dir_it != config.end()) {
+        return std::make_optional(ov::util::make_path(cache_dir_it->second.as<std::string>()));
+    } else if (cache_path_it != config.end()) {
+        return std::make_optional(cache_path_it->second.as<std::filesystem::path>());
+    } else {
+        return std::nullopt;
+    }
 }
 
 void emplace_cache_dir_if_supported(ov::AnyMap& config,
@@ -1253,6 +1273,8 @@ ov::Any ov::CoreImpl::get_property_for_core(const std::string& name) const {
         return decltype(ov::force_tbb_terminate)::value_type(flag);
     } else if (name == ov::cache_dir.name()) {
         return ov::Any(util::path_to_string(m_core_config.get_cache_dir()));
+    } else if (name == ov::cache_path.name()) {
+        return {m_core_config.get_cache_dir()};
     } else if (name == ov::enable_mmap.name()) {
         const auto flag = m_core_config.get_enable_mmap();
         return decltype(ov::enable_mmap)::value_type(flag);
@@ -1284,6 +1306,8 @@ ov::Any ov::CoreImpl::get_property(const std::string& device_name,
     } else if (name == ov::cache_dir.name()) {
         return util::path_to_string(
             m_core_config.get_cache_config_for_device(get_plugin(parsed.m_device_name)).m_cache_dir);
+    } else if (name == ov::cache_path.name()) {
+        return {m_core_config.get_cache_config_for_device(get_plugin(parsed.m_device_name)).m_cache_dir};
     }
     return get_plugin(parsed.m_device_name).get_property(name, parsed.m_config);
 }
@@ -1654,17 +1678,16 @@ ov::CoreConfig::CoreConfig(const CoreConfig& other) {
 }
 
 void ov::CoreConfig::set(const ov::AnyMap& config, const std::string& device_name) {
-    if (const auto cfg_entry = config.find(ov::cache_dir.name()); cfg_entry != config.end()) {
-        const auto cache_dir = util::make_path(cfg_entry->second.as<std::string>());
+    if (const auto cache_path = get_cache_path_from_config(config); cache_path.has_value()) {
         if (std::lock_guard<std::mutex> lock(m_cache_config_mutex); device_name.empty()) {
             // fill global cache config
-            m_cache_config = CoreConfig::CacheConfig::create(cache_dir);
+            m_cache_config = CoreConfig::CacheConfig::create(*cache_path);
             // sets cache config per-device if it's not set explicitly before
             for (auto& device_cfg : m_devices_cache_config) {
-                device_cfg.second = CoreConfig::CacheConfig::create(cache_dir);
+                device_cfg.second = CoreConfig::CacheConfig::create(*cache_path);
             }
         } else {
-            m_devices_cache_config[device_name] = CoreConfig::CacheConfig::create(cache_dir);
+            m_devices_cache_config[device_name] = CoreConfig::CacheConfig::create(*cache_path);
         }
     }
 
@@ -1704,12 +1727,14 @@ ov::CoreConfig::CacheConfig ov::CoreConfig::get_cache_config_for_device(const ov
 }
 
 ov::CoreConfig::CacheConfig ov::CoreConfig::CacheConfig::create(const std::filesystem::path& dir) {
-    CacheConfig cache_config{dir, nullptr};
-    if (!dir.empty()) {
+    auto cfg = CacheConfig{dir, nullptr};
+    if (dir.has_extension()) {
+        OPENVINO_NOT_IMPLEMENTED;
+    } else if (!dir.empty()) {
         ov::util::create_directory_recursive(dir);
-        cache_config.m_cache_manager = std::make_shared<ov::FileStorageCacheManager>(dir);
+        cfg.m_cache_manager = std::make_shared<FileStorageCacheManager>(dir);
     }
-    return cache_config;
+    return cfg;
 }
 
 std::mutex& ov::CoreImpl::get_mutex(const std::string& dev_name) const {
