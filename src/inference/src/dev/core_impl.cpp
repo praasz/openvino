@@ -5,8 +5,8 @@
 #include "core_impl.hpp"
 
 #include <memory>
-#include <variant>
 #include <optional>
+#include <variant>
 
 #include "check_network_batchable.hpp"
 #include "itt.hpp"

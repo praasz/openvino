@@ -782,7 +782,6 @@ static inline constexpr Property<std::filesystem::path, PropertyMutability::WO> 
  *
  * The following code allows to import a model from the cache if the original model is not available.
  * @code
- * // gets blobs IDs with from cache file "cache/file.bin"
  * core.compile_model(empty_model, "NPU", ov::AnyMap{ov::cache_blob_id("746352"), ov::cache_path("cache_dir")});
  * @endcode
  */
