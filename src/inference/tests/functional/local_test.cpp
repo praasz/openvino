@@ -365,7 +365,7 @@ TEST_F(LocaleTestsWithCacheDir, WithUSLocale) {
     OV_ASSERT_NO_THROW(testBody(ov::cache_path("test_cache")));
 }
 
-TEST_F(LocaleTestsWithCacheDir, EnableCacheingPropertyCollision) {
+TEST_F(LocaleTestsWithCacheDir, EnableCachingPropertyCollision) {
     ov::Core core;
     OV_EXPECT_THROW(
         core.compile_model(get_test_model(), "CPU", {ov::cache_dir("test_cache"), ov::cache_path("test_cache")}),

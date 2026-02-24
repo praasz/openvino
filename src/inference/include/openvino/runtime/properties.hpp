@@ -613,14 +613,6 @@ static constexpr Property<float, PropertyMutability::RW> activations_scale_facto
  *
  * The property is used pass compiled blob as ov::Tensor.
  * The blob can be regular or weightless model. The `weights_path` property is hint where to look for weights.
- *
- * The property can be used to read blob from cache when using cache file e.g.:
- *
- * @code
- * // try gets blobs ID "746352" from cache file "cache_file.bin"
- * ie.get_property("", ov::hint::compiled_blob.name(), ov::AnyMap{ov::cache_blob_id("746352"),
- * ov::cache_dir("cache_file.bin")});
- * @endcode
  */
 inline constexpr Property<Tensor, PropertyMutability::RW> compiled_blob{"COMPILED_BLOB"};
 }  // namespace hint
@@ -736,7 +728,7 @@ static constexpr Property<std::string> cache_dir{"CACHE_DIR"};
  * The underlying cache structure is not defined and might differ between OpenVINO releases
  * Cached data might be platform / device specific and might be invalid after OpenVINO version change
  *
- * The path can be directory then it has the same effect as `cache_dir` property. Regular cacheing is used in this case.
+ * The path can be directory then it has the same effect as `cache_dir` property. Regular caching is used in this case.
  * The path can be file then single file caching mode is enabled which supports sharing data between model.
  * This mode has limitation, only appending new models to the cache is possible, and there is no recompilation of cache
  * model.
@@ -751,11 +743,11 @@ static constexpr Property<std::string> cache_dir{"CACHE_DIR"};
  * The following code enables caching of compiled network blobs for devices where import/export is supported
  *
  * @code
- * ie.set_property(ov::cache_dir("cache/")); // enables models cache
+ * ie.set_property(ov::cache_path("cache/")); // enables models cache
  * @endcode
  *
  * @code
- * ie.set_property(ov::cache_path("NPU", "cache_file.bin")); // enables models cache as single file for NPU plugin
+ * ie.set_property("NPU", ov::cache_path("cache_file.bin")); // enables models cache as single file for NPU plugin
  * @endcode
  */
 inline constexpr Property<std::filesystem::path> cache_path{"CACHE_PATH"};
@@ -778,17 +770,17 @@ static inline constexpr Property<std::filesystem::path, PropertyMutability::WO> 
 /**
  * @brief The property allows set user ID for cache entry.
  *
- * This override internal ID generation mechanism and user must manage the ID. If defined by user is mandatory to use
- * to restore model from cache, otherwise the model will compiled.
+ * This overrides the internal ID generation mechanism and the user must manage the ID. If defined by user is
+ * mandatory to use to restore model from cache, otherwise the model will be compiled.
  * The custom ID can allow import model from cache file without original model.
  *
- * The following code allow compile model with custom ID.
+ * The following code allows to compile a model with a custom ID.
  * @code
  * // store compiled model to cache with ID "746352"
  * core.compile_model(model, "NPU", ov::AnyMap{ov::cache_blob_id("746352"), ov::cache_path("cache_dir")});
  * @endcode
  *
- * The following code allow import model from cache if origin model not available.
+ * The following code allows to import a model from the cache if the original model is not available.
  * @code
  * // gets blobs IDs with from cache file "cache/file.bin"
  * core.compile_model(empty_model, "NPU", ov::AnyMap{ov::cache_blob_id("746352"), ov::cache_path("cache_dir")});
