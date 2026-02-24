@@ -209,9 +209,10 @@ void clean_batch_properties(const std::string& device_name, ov::AnyMap& config, 
 
 static const auto core_properties_names = ov::util::make_array(ov::cache_dir.name(),
                                                                ov::cache_path.name(),
+                                                               ov::cache_model_path.name(),
+                                                               ov::cache_blob_id.name(),
                                                                ov::enable_mmap.name(),
-                                                               ov::force_tbb_terminate.name(),
-                                                               ov::cache_model_path.name());
+                                                               ov::force_tbb_terminate.name());
 
 static const auto auto_batch_properties_names =
     ov::util::make_array(ov::auto_batch_timeout.name(), ov::hint::allow_auto_batching.name());
@@ -282,6 +283,14 @@ std::vector<ov::Extension::Ptr> try_get_extensions(std::shared_ptr<void>& so) {
         return ov::detail::load_extensions(so);
     } catch (const std::runtime_error&) {
         return {};
+    }
+}
+
+std::string get_blob_id_or_compute(const ov::AnyMap& user_config, std::function<std::string()>&& calculate_blob_id) {
+    if (auto blob_id_hint = user_config.find(ov::cache_blob_id.name()); blob_id_hint != user_config.end()) {
+        return blob_id_hint->second.as<std::string>();
+    } else {
+        return calculate_blob_id();
     }
 }
 }  // namespace
@@ -863,7 +872,9 @@ ov::SoPtr<ov::ICompiledModel> ov::CoreImpl::compile_model(const std::shared_ptr<
         emplace_cache_dir_if_supported(parsed.m_config, plugin, cache_dir);
         CacheContent cache_content{cache_manager, parsed.m_core_config.get_enable_mmap(), get_cache_model_path(config)};
         const auto compiled_config = create_compile_config(plugin, parsed.m_config);
-        cache_content.m_blob_id = ModelCache::compute_hash(model, cache_content.m_model_path, compiled_config);
+        cache_content.m_blob_id = get_blob_id_or_compute(config, [&] {
+            return ModelCache::compute_hash(model, cache_content.m_model_path, compiled_config);
+        });
         cache_content.model = model;
 
         const auto& cache_mode_it = config.find(cache_mode.name());
@@ -908,7 +919,9 @@ ov::SoPtr<ov::ICompiledModel> ov::CoreImpl::compile_model(const std::shared_ptr<
         emplace_cache_dir_if_supported(parsed.m_config, plugin, cache_dir);
         CacheContent cache_content{cache_manager, parsed.m_core_config.get_enable_mmap(), get_cache_model_path(config)};
         const auto compiled_config = create_compile_config(plugin, parsed.m_config);
-        cache_content.m_blob_id = ModelCache::compute_hash(model, cache_content.m_model_path, compiled_config);
+        cache_content.m_blob_id = get_blob_id_or_compute(config, [&] {
+            return ModelCache::compute_hash(model, cache_content.m_model_path, compiled_config);
+        });
         cache_content.model = model;
         res = load_model_from_cache(cache_content, plugin, parsed.m_config, context, [&]() {
             return compile_model_and_cache(plugin, model, parsed.m_config, context, cache_content);
@@ -936,8 +949,9 @@ ov::SoPtr<ov::ICompiledModel> ov::CoreImpl::compile_model(const std::filesystem:
         CoreConfig::remove_core(parsed.m_config);
         emplace_cache_dir_if_supported(parsed.m_config, plugin, cache_dir);
         CacheContent cache_content{cache_manager, parsed.m_core_config.get_enable_mmap(), model_path};
-        cache_content.m_blob_id =
-            ov::ModelCache::compute_hash(cache_content.m_model_path, create_compile_config(plugin, parsed.m_config));
+        cache_content.m_blob_id = get_blob_id_or_compute(config, [&] {
+            return ModelCache::compute_hash(cache_content.m_model_path, create_compile_config(plugin, parsed.m_config));
+        });
         const auto lock = m_cache_guard.get_hash_lock(cache_content.m_blob_id);
         compiled_model = load_model_from_cache(cache_content, plugin, parsed.m_config, {}, [&]() {
             const auto model =
@@ -965,8 +979,9 @@ ov::SoPtr<ov::ICompiledModel> ov::CoreImpl::compile_model(const std::string& mod
     } else if (cache_manager && device_supports_model_caching(plugin, parsed.m_config) && !is_proxy_device(plugin)) {
         emplace_cache_dir_if_supported(parsed.m_config, plugin, cache_dir);
         CacheContent cache_content{cache_manager, parsed.m_core_config.get_enable_mmap()};
-        cache_content.m_blob_id =
-            ov::ModelCache::compute_hash(model_str, weights, create_compile_config(plugin, parsed.m_config));
+        cache_content.m_blob_id = get_blob_id_or_compute(config, [&] {
+            return ModelCache::compute_hash(model_str, weights, create_compile_config(plugin, parsed.m_config));
+        });
         const auto lock = m_cache_guard.get_hash_lock(cache_content.m_blob_id);
         compiled_model = load_model_from_cache(cache_content, plugin, parsed.m_config, {}, [&]() {
             const auto model = read_model(model_str, weights);
