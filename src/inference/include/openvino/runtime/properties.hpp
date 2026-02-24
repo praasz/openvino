@@ -728,9 +728,9 @@ static constexpr Property<std::string> cache_dir{"CACHE_DIR"};
  * The underlying cache structure is not defined and might differ between OpenVINO releases
  * Cached data might be platform / device specific and might be invalid after OpenVINO version change
  *
- * The path can be directory then it has the same effect as `cache_dir` property. Regular caching is used in this case.
- * The path can be file then single file caching mode is enabled which supports sharing data between model.
- * This mode has limitation, only appending new models to the cache is possible, and there is no recompilation of cache
+ * If the path is a directory, it has the same effect as the `cache_dir` property. Regular caching is used in this case.
+ * If the path is a file, single-file caching mode is enabled, which supports sharing data between models.
+ * This mode has limitations: only appending new models to the cache is possible, and there is no recompilation of cache
  * model.
  *
  * If this property is not specified or value is empty string, then caching is disabled.
@@ -768,11 +768,11 @@ static constexpr Property<bool, PropertyMutability::RO> loaded_from_cache{"LOADE
 static inline constexpr Property<std::filesystem::path, PropertyMutability::WO> cache_model_path{"CACHE_MODEL_PATH"};
 
 /**
- * @brief The property allows set user ID for cache entry.
+ * @brief The property allows setting a user ID for a cache entry.
  *
- * This overrides the internal ID generation mechanism and the user must manage the ID. If defined by user is
- * mandatory to use to restore model from cache, otherwise the model will be compiled.
- * The custom ID can allow import model from cache file without original model.
+ * This overrides the internal ID generation mechanism and the user must manage the ID. If defined by the user, the
+ * same ID must be used to restore the model from the cache; otherwise, the model will be compiled.
+ * The custom ID can allow importing a model from the cache file without the original model.
  *
  * The following code allows to compile a model with a custom ID.
  * @code
