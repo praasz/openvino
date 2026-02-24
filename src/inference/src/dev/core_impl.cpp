@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <variant>
+#include <optional>
 
 #include "check_network_batchable.hpp"
 #include "itt.hpp"
@@ -416,7 +417,7 @@ std::optional<std::filesystem::path> get_cache_path_from_config(const ov::AnyMap
                        ov::cache_path.name(),
                        "' or '",
                        ov::cache_dir.name(),
-                       "' property. Both setin configuration.");
+                       "' property. Both set in configuration.");
     } else if (cache_dir_it != config.end()) {
         return std::make_optional(ov::util::make_path(cache_dir_it->second.as<std::string>()));
     } else if (cache_path_it != config.end()) {
