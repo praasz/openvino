@@ -1744,7 +1744,7 @@ ov::CoreConfig::CacheConfig ov::CoreConfig::get_cache_config_for_device(const ov
 
 ov::CoreConfig::CacheConfig ov::CoreConfig::CacheConfig::create(const std::filesystem::path& dir) {
     auto cfg = CacheConfig{dir, nullptr};
-    if (dir.has_extension()) {
+    if (dir.extension() == ".bin") {
         OPENVINO_NOT_IMPLEMENTED;
     } else if (!dir.empty()) {
         ov::util::create_directory_recursive(dir);
