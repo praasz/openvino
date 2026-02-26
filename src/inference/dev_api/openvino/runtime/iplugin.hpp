@@ -234,6 +234,9 @@ public:
      */
     const std::shared_ptr<ov::threading::ExecutorManager>& get_executor_manager() const;
 
+
+    virtual ~IPlugin() = default;
+
     /**
      * @brief Checks if a property is supported by the plugin.
      *
@@ -242,8 +245,6 @@ public:
      * @return true if the property is supported, otherwise false.
     */
     virtual bool is_property_supported(const std::string& name, const ov::AnyMap& arguments = {}) const;
-
-    virtual ~IPlugin() = default;
 
 protected:
     IPlugin();
