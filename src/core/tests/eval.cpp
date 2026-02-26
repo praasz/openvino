@@ -69,7 +69,6 @@
 #include "sequence_generator.hpp"
 #include "utils/eval_utils.hpp"
 
-// using namespace std;
 namespace ov::test {
 using ov::op::v0::Parameter, ov::op::v0::Constant;
 using std::make_shared, std::vector;
