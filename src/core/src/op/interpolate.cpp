@@ -216,6 +216,7 @@ bool evaluate_interpolate(const ov::op::util::InterpolateBase* node,
     const auto& input_et = inputs[0].get_element_type();
     const auto type_size = input_et.size();
     auto padded_input_data = ov::Tensor(input_et, padded_input_shape);
+    std::memset(padded_input_data.data(), 0, padded_input_data.get_byte_size());
 
     ov::reference::pad_input_data(reinterpret_cast<const uint8_t*>(inputs[data_port].data()),
                                   reinterpret_cast<uint8_t*>(padded_input_data.data()),
