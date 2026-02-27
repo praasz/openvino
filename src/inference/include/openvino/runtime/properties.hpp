@@ -1372,21 +1372,33 @@ static constexpr Property<uint64_t, PropertyMutability::RW> value_cache_group_si
  * @brief The runtime requirements for the model
  * @ingroup ov_runtime_cpp_prop_api
  *
- * The property can be used to read or pass the runtime requirements for the model. It allow to check if compiled model
- * can be imported before start loading it.
+ * This property can be used to read or pass the plugin's runtime requirements for a compiled model.
+ * It allows checking whether a compiled model can be imported on a device before loading it.
  *
- * The property value is a string containing a comma-separated list of runtime requirements required to execute the compiled model.
+ * The property value is an ov::Tensor containing binary data with plugin-specific runtime requirements.
+ * The format and content of this data are plugin-dependent and may include information such as:
+ * - Plugin version compatibility
+ * - Hardware capabilities required
+ * - Driver version requirements
  *
- * The following code provides runtime requirements for compiled model
+ * **Reading requirements from a compiled model:**
  * @code
- * compiled_model.get_property(ov::runtime_requirements.name()); // get requirements for compiled model
+ * auto compiled_model = core.compile_model(model, "NPU");
+ * auto requirements = compiled_model.get_property(ov::runtime_requirements);
+ * // Store requirements for later validation
  * @endcode
  *
- * The following code validates if compiled model can be imported on device before loading it
- *
+ * **Validating requirements before importing:**
  * @code
- * core.get_property("NPU", ov::runtime_requirements.name(), "Req1,Req2"); // get true/false
+ * // Load previously saved requirements tensor
+ * auto requirements = ov::read_tensor_data("requirements.bin");
+ *
+ * // Check if the device meets the requirements
+ * bool can_import = core.get_property("NPU", ov::runtime_requirements, requirements);
+ * if (can_import) {
+ *     auto compiled_model = core.import_model(model_stream, "NPU");
+ * }
  * @endcode
  */
-inline constexpr Property<std::string, PropertyMutability::RW> runtime_requirements{"RUNTIME_REQUIREMENTS"};
+inline constexpr Property<Tensor, PropertyMutability::RW> runtime_requirements{"RUNTIME_REQUIREMENTS"};
 }  // namespace ov
