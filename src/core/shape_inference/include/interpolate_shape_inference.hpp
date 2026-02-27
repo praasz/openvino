@@ -143,7 +143,7 @@ TRShape make_padded_shape(const TShape& input, TInputIter pads_begin, TInputIter
 
         if (pad_a == pad_max || pad_b == pad_max || (pad_b > (pad_max - pad_a))) {
             return TDim(ov::util::dim::inf_bound);
-        } else{
+        } else {
             return ov::util::dim::padded(d, pad_a + pad_b);
         }
     });
