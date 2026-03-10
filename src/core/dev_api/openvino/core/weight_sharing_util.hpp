@@ -51,7 +51,7 @@ using WeakWeightBuffer = std::weak_ptr<ov::AlignedBuffer>;
 
 /** @brief Structure representing a weight source */
 struct WeightSource {
-    DataID m_device;
+    std::string m_device;
     WeakWeightBuffer m_weights;
 };
 
