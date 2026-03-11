@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "icache_manager.hpp"
 #include "openvino/core/weight_sharing_util.hpp"
+#include "openvino/runtime/icache_manager.hpp"
 #include "openvino/runtime/tlv_format.hpp"
 #include "openvino/util/ov_version.hpp"
 
@@ -13,7 +13,7 @@ namespace ov::runtime {
 class SingleFileStorage final : public ICacheManager, public IContextStore {
 public:
     /** @brief Current version of the single file storage format. */
-    static constexpr util::Version m_version{0, 1, 0, 0, 0};
+    static constexpr util::Version m_version{0, 1, 0};
 
     enum class Tag : TLVTraits::TagType {
         String = 0x02,
