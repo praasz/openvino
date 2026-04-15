@@ -612,7 +612,7 @@ std::string ov::pass::VisualizeTree::get_attributes(std::shared_ptr<Node> node) 
     }
 
     std::stringstream ss;
-    ss << "    " << node->get_name() << " [" << ov::util::join(attributes, " ") << "]\n";
+    ss << "    " << node->get_name() << " [" << ov::util::joined(attributes, " ") << "]\n";
 
     return ss.str();
 }

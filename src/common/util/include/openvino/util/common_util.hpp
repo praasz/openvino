@@ -19,25 +19,59 @@
 
 namespace ov::util {
 /**
- * @brief Join container's elements to string using user string as separator.
+ * @brief  Helper struct to join container's elements to string using user string as separator.
+ * The output string is generated in operator<< and can be used in any context where std::string is expected.
+ * Example:
+ * std::vector<int> vec = {1, 2, 3};
+ * std::cout << Joined{vec, ","} << std::endl; // Output: 1,2,3
  *
- * @param container  Element to make joined string.
- * @param sep        User string used as separator. Default ", ".
- * @return Joined elements as string.
+ * @tparam Container
  */
 template <typename Container>
-std::string join(const Container& container, const std::string& sep = ", ") {
-    std::ostringstream ss;
-    auto first = std::begin(container);
-    const auto last = std::end(container);
-    if (first != last) {
-        ss << *first;
-        ++first;
-        for (; first != last; ++first) {
-            ss << sep << *first;
+struct Joined {
+    const Container& c;
+    std::string_view sep;
+
+    friend std::ostream& operator<<(std::ostream& os, const Joined& jv) {
+        auto first = std::begin(jv.c);
+        const auto last = std::end(jv.c);
+        if (first != last) {
+            os << *first;
+            for (++first; first != last; ++first)
+                os << jv.sep << *first;
         }
+        return os;
     }
-    return ss.str();
+
+    operator std::string() const {
+        std::ostringstream ss;
+        ss << *this;
+        return ss.str();
+    }
+};
+
+/**
+ * @brief Creates Joined struct for given container and separator.
+ *
+ * @param c   The input container whose elements are to be joined.
+ * @param sep The separator to be used between the elements. Default is ", ".
+ * @return Joined<Container> struct.
+ */
+template <typename Container>
+Joined<Container> joined(const Container& c, std::string_view sep = ", ") {
+    return {c, sep};
+}
+
+/**
+ * @brief Util to create a string from a container's elements joined by a separator.
+ *
+ * @param c   The input container.
+ * @param sep The separator to be used between the elements. Default is ", ".
+ * @return A string representation of the container's elements joined by the specified separator.
+ */
+template <typename Container>
+std::string join(const Container& c, std::string_view sep = ", ") {
+    return {joined(c, sep)};
 }
 
 /**
@@ -49,7 +83,7 @@ std::string join(const Container& container, const std::string& sep = ", ") {
  *  - std::vector<int>{}      -> "[  ]"
  *
  * @param v  Vector to be converted
- * @return String contains
+ * @return String contains the vector elements
  */
 template <typename T, typename A>
 std::string vector_to_string(const std::vector<T, A>& v) {

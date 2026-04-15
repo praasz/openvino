@@ -500,7 +500,7 @@ public:
     template <class Container>
     std::string join(const Container& strs) {
         std::stringstream ss;
-        ss << "[" << ov::util::join(strs, ",") << "]";
+        ss << "[" << ov::util::joined(strs, ",") << "]";
         return ss.str();
     }
 };
@@ -564,7 +564,7 @@ std::ostream& operator<<(std::ostream& os, const PrintableModel& model) {
                     if (constop->get_element_type().is_dynamic()) {
                         os << "...";
                     } else {
-                        os << ov::util::join(constop->get_value_strings(), ",");
+                        os << ov::util::joined(constop->get_value_strings(), ",");
                     }
                 } else {
                     os << "...";

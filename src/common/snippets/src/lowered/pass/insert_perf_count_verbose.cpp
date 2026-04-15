@@ -99,12 +99,12 @@ std::string InsertPerfCountVerbose::collect_params(const ov::snippets::lowered::
     std::stringstream ss;
     ss << m_subgraph_name << ',';
     ss << brgemm_expr->get_node()->get_friendly_name() << ',';
-    ss << ov::util::join(input_types, ";") << ',';
-    ss << ov::util::join(output_types, ";") << ',';
-    ss << ov::util::join(input_shapes, ";") << ',';
-    ss << ov::util::join(output_shapes, ";") << ',';
-    ss << ov::util::join(input_layouts, ";") << (input_layouts.empty() ? "" : ";") << ',';
-    ss << ov::util::join(output_layouts, ";") << (output_layouts.empty() ? "" : ";") << ',';
+    ss << ov::util::joined(input_types, ";") << ',';
+    ss << ov::util::joined(output_types, ";") << ',';
+    ss << ov::util::joined(input_shapes, ";") << ',';
+    ss << ov::util::joined(output_shapes, ";") << ',';
+    ss << ov::util::joined(input_layouts, ";") << (input_layouts.empty() ? "" : ";") << ',';
+    ss << ov::util::joined(output_layouts, ";") << (output_layouts.empty() ? "" : ";") << ',';
 
     const auto& in_0_desc = brgemm_expr->get_input_port_descriptor(0);
     const auto& in_1_desc = brgemm_expr->get_input_port_descriptor(1);

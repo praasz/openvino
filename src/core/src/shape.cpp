@@ -9,10 +9,7 @@
 #include "openvino/util/common_util.hpp"
 
 std::ostream& ov::operator<<(std::ostream& s, const Shape& shape) {
-    s << "[";
-    s << ov::util::join(shape, ",");
-    s << "]";
-    return s;
+    return s << "[" << ov::util::joined(shape, ",") << "]";
 }
 
 ov::Shape::Shape() : std::vector<size_t>() {}
