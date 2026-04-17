@@ -1,0 +1,2 @@
+src/tests/test_utils/common_test_utils/tests/common_util_test.cpp
+src/common/snippets/include/snippets/utils/debug_caps_config.hpp
