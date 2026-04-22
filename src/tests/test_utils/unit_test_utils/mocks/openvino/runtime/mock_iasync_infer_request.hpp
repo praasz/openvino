@@ -11,15 +11,15 @@
 #include <string>
 #include <vector>
 
-#include "openvino/runtime/iasync_infer_request.hpp"
+#include "openvino/runtime/async_infer_request.hpp"
 #include "openvino/runtime/ivariable_state.hpp"
 #include "openvino/runtime/profiling_info.hpp"
 
 namespace ov {
 
-class MockIAsyncInferRequest : public ov::IAsyncInferRequest {
+class MockIAsyncInferRequest : public ov::AsyncInferRequest {
 public:
-    MockIAsyncInferRequest() : ov::IAsyncInferRequest(nullptr, nullptr, nullptr) {}
+    MockIAsyncInferRequest() : ov::AsyncInferRequest(nullptr, nullptr, nullptr) {}
 
     MOCK_METHOD(void, start_async, ());
     MOCK_METHOD(void, wait, ());

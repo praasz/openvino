@@ -16,7 +16,7 @@
 
 ov::proxy::InferRequest::InferRequest(ov::SoPtr<ov::IAsyncInferRequest>&& request,
                                       const std::shared_ptr<const ov::ICompiledModel>& compiled_model)
-    : ov::IAsyncInferRequest(nullptr, nullptr, nullptr),
+    : ov::AsyncInferRequest(nullptr, nullptr, nullptr),
       m_infer_request(std::move(request)),
       m_compiled_model(compiled_model) {}
 void ov::proxy::InferRequest::start_async() {

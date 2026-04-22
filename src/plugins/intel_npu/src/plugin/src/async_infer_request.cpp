@@ -13,7 +13,7 @@ AsyncInferRequest::AsyncInferRequest(const std::shared_ptr<InferRequest>& syncIn
                                      const std::shared_ptr<ov::threading::ITaskExecutor>& requestExecutor,
                                      const std::shared_ptr<ov::threading::ITaskExecutor>& getResultExecutor,
                                      const std::shared_ptr<ov::threading::ITaskExecutor>& callbackExecutor)
-        : ov::IAsyncInferRequest(syncInferRequest, requestExecutor, callbackExecutor),
+        : ov::AsyncInferRequest(syncInferRequest, requestExecutor, callbackExecutor),
           _syncInferRequest(syncInferRequest), _getResultExecutor(getResultExecutor) {
     m_pipeline = {
             {requestExecutor,       [this] { _syncInferRequest->infer_async(); }},

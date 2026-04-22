@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#include "mock_plugins.hpp"
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -12,8 +10,10 @@
 
 #include "intel_npu/npu_private_properties.hpp"
 #include "intel_npu/npuw_private_properties.hpp"
+#include "mock_plugins.hpp"
 #include "openvino/core/version.hpp"
 #include "openvino/pass/serialize.hpp"
+#include "openvino/runtime/async_infer_request.hpp"
 #include "openvino/runtime/make_tensor.hpp"
 
 namespace ov {
@@ -64,7 +64,7 @@ void MockCompiledModelBase::create_implementation() {
     ON_CALL(*this, outputs()).WillByDefault(testing::ReturnRefOfCopy(m_model->outputs()));
     ON_CALL(*this, create_infer_request).WillByDefault([this]() {
         auto syncRequestImpl = create_sync_infer_request();
-        return std::make_shared<ov::IAsyncInferRequest>(syncRequestImpl, get_task_executor(), get_callback_executor());
+        return std::make_shared<ov::AsyncInferRequest>(syncRequestImpl, get_task_executor(), get_callback_executor());
     });
     ON_CALL(*this, export_model(testing::_)).WillByDefault([](std::ostream& s) {
         OPENVINO_NOT_IMPLEMENTED;

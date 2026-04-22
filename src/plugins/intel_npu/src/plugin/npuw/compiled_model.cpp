@@ -34,9 +34,8 @@
 #include "intel_npu/npuw_private_properties.hpp"
 #include "llm_compiled_model.hpp"
 #include "openvino/core/rt_info/weightless_caching_attributes.hpp"
+#include "openvino/runtime/async_infer_request.hpp"
 #include "openvino/runtime/device_id_parser.hpp"
-#include "openvino/runtime/internal_properties.hpp"
-#include "openvino/runtime/properties.hpp"
 #include "openvino/util/file_util.hpp"
 #include "transformations/convert_precision.hpp"
 
@@ -2249,7 +2248,7 @@ std::shared_ptr<ov::ISyncInferRequest> ov::npuw::CompiledModel::create_sync_infe
 
 std::shared_ptr<ov::IAsyncInferRequest> ov::npuw::CompiledModel ::wrap_async_infer_request(
     std::shared_ptr<ov::npuw::IBaseInferRequest> internal_request) const {
-    return std::make_shared<ov::IAsyncInferRequest>(internal_request, get_task_executor(), get_callback_executor());
+    return std::make_shared<ov::AsyncInferRequest>(internal_request, get_task_executor(), get_callback_executor());
 }
 
 std::shared_ptr<ov::IAsyncInferRequest> ov::npuw::CompiledModel::create_infer_request() const {

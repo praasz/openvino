@@ -5,14 +5,14 @@
 
 #include <memory>
 
-#include "openvino/runtime/iasync_infer_request.hpp"
+#include "openvino/runtime/async_infer_request.hpp"
 #include "openvino/runtime/icompiled_model.hpp"
 #include "openvino/runtime/so_ptr.hpp"
 
 namespace ov {
 namespace proxy {
 
-class InferRequest : public ov::IAsyncInferRequest {
+class InferRequest : public ov::AsyncInferRequest {
 private:
     ov::SoPtr<ov::IAsyncInferRequest> m_infer_request;
     std::shared_ptr<const ov::ICompiledModel> m_compiled_model;

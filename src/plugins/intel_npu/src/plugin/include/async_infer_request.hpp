@@ -6,13 +6,13 @@
 
 #include <memory>
 
-#include "openvino/runtime/iasync_infer_request.hpp"
+#include "openvino/runtime/async_infer_request.hpp"
 
 namespace intel_npu {
 
 class InferRequest;
 
-class AsyncInferRequest final : public ov::IAsyncInferRequest {
+class AsyncInferRequest final : public ov::AsyncInferRequest {
 public:
     explicit AsyncInferRequest(const std::shared_ptr<InferRequest>& inferRequest,
                                const std::shared_ptr<ov::threading::ITaskExecutor>& requestExecutor,

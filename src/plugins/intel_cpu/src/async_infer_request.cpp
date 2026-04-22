@@ -7,7 +7,7 @@
 #include <memory>
 #include <vector>
 
-#include "openvino/runtime/iasync_infer_request.hpp"
+#include "openvino/runtime/async_infer_request.hpp"
 #include "openvino/runtime/iinfer_request.hpp"
 #include "openvino/runtime/threading/istreams_executor.hpp"
 #include "openvino/runtime/threading/itask_executor.hpp"
@@ -17,12 +17,12 @@ ov::intel_cpu::AsyncInferRequest::AsyncInferRequest(
     const std::shared_ptr<ov::threading::ITaskExecutor>& task_executor,
     const std::shared_ptr<ov::threading::ITaskExecutor>& callback_executor,
     const bool is_optimized_single_stream)
-    : ov::IAsyncInferRequest(request, task_executor, callback_executor),
+    : ov::AsyncInferRequest(request, task_executor, callback_executor),
       m_internal_request(request) {
     static_cast<SyncInferRequest*>(request.get())->set_async_request(this);
     m_stream_executor = std::dynamic_pointer_cast<ov::threading::IStreamsExecutor>(task_executor);
     m_infer_func = [this]() {
-        ov::IAsyncInferRequest::infer();
+        ov::AsyncInferRequest::infer();
     };
     if (is_optimized_single_stream) {
         m_infer_func = [this]() {

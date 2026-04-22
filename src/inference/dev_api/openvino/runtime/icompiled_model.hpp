@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "openvino/core/node_output.hpp"
+#include "openvino/runtime/async_infer_request.hpp"
 #include "openvino/runtime/common.hpp"
 #include "openvino/runtime/iplugin.hpp"
 #include "openvino/runtime/iremote_context.hpp"
@@ -165,12 +166,12 @@ protected:
     /**
      * @brief Default implementation of create async inter request method
      *
-     * @tparam AsyncInferRequestType Async infer request type. ov::IAsyncInferRequest by
+     * @tparam AsyncInferRequestType Async infer request type. ov::AsyncInferRequest by
      * default
      *
      * @return Asynchronous infer request
      */
-    template <typename AsyncInferRequestType = ov::IAsyncInferRequest>
+    template <typename AsyncInferRequestType = ov::AsyncInferRequest>
     std::shared_ptr<ov::IAsyncInferRequest> create_async_infer_request() const {
         auto syncRequestImpl = create_sync_infer_request();
         return std::make_shared<AsyncInferRequestType>(syncRequestImpl, m_task_executor, m_callback_executor);

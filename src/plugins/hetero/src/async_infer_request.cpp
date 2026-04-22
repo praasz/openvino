@@ -24,7 +24,7 @@ struct RequestExecutor : ov::threading::ITaskExecutor {
 ov::hetero::AsyncInferRequest::AsyncInferRequest(const std::shared_ptr<ov::hetero::InferRequest>& request,
                                                  const std::shared_ptr<ov::threading::ITaskExecutor>& task_executor,
                                                  const std::shared_ptr<ov::threading::ITaskExecutor>& callback_executor)
-    : ov::IAsyncInferRequest(request, task_executor, callback_executor),
+    : ov::AsyncInferRequest(request, task_executor, callback_executor),
       m_infer_request(std::static_pointer_cast<ov::hetero::InferRequest>(request)) {
     m_pipeline.clear();
     for (auto&& request : m_infer_request->m_subrequests) {
@@ -38,11 +38,11 @@ ov::hetero::AsyncInferRequest::AsyncInferRequest(const std::shared_ptr<ov::heter
 }
 
 ov::hetero::AsyncInferRequest::~AsyncInferRequest() {
-    ov::IAsyncInferRequest::stop_and_wait();
+    ov::AsyncInferRequest::stop_and_wait();
 }
 
 void ov::hetero::AsyncInferRequest::cancel() {
-    ov::IAsyncInferRequest::cancel();
+    ov::AsyncInferRequest::cancel();
     for (auto&& request : m_infer_request->m_subrequests) {
         request->cancel();
     }

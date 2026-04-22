@@ -6,8 +6,10 @@
 #include <gmock/gmock.h>
 
 #include <iostream>
+
 #include "common_test_utils/test_assertions.hpp"
 #include "compiled_model.hpp"
+#include "openvino/runtime/async_infer_request.hpp"
 #include "openvino/runtime/make_tensor.hpp"
 #include "plugin.hpp"
 
@@ -138,12 +140,12 @@ private:
     }
 };
 
-class MockIAsyncInferRequest : public ov::IAsyncInferRequest {
+class MockIAsyncInferRequest : public ov::AsyncInferRequest {
 public:
     MockIAsyncInferRequest(const std::shared_ptr<IInferRequest>& request,
                            const std::shared_ptr<ov::threading::ITaskExecutor>& task_executor,
                            const std::shared_ptr<ov::threading::ITaskExecutor>& callback_executor)
-        : IAsyncInferRequest(request, task_executor, callback_executor) {
+        : AsyncInferRequest(request, task_executor, callback_executor) {
         m_pipeline = {};
     }
     MOCK_METHOD(void, start_async, (), (override));

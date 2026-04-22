@@ -6,7 +6,7 @@
 
 #include <memory>
 
-#include "openvino/runtime/iasync_infer_request.hpp"
+#include "openvino/runtime/async_infer_request.hpp"
 #include "openvino/runtime/iinfer_request.hpp"
 #include "sync_infer_request.hpp"
 
@@ -14,7 +14,7 @@ namespace ov {
 namespace template_plugin {
 
 // ! [async_infer_request:header]
-class AsyncInferRequest : public ov::IAsyncInferRequest {
+class AsyncInferRequest : public ov::AsyncInferRequest {
 public:
     AsyncInferRequest(const std::shared_ptr<InferRequest>& request,
                       const std::shared_ptr<ov::threading::ITaskExecutor>& task_executor,

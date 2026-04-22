@@ -50,13 +50,13 @@ private:
                               const ov::Shape& shape);
 };
 
-class MockAsyncInferRequest : public IAsyncInferRequest {
+class MockAsyncInferRequest : public AsyncInferRequest {
 public:
     MockAsyncInferRequest(const std::shared_ptr<IInferRequest>& request,
                           const std::shared_ptr<ov::threading::ITaskExecutor>& task_executor,
                           const std::shared_ptr<ov::threading::ITaskExecutor>& callback_executor,
                           bool ifThrow)
-        : IAsyncInferRequest(request, task_executor, callback_executor),
+        : AsyncInferRequest(request, task_executor, callback_executor),
           m_throw(ifThrow) {
         m_pipeline = {};
         m_pipeline.push_back({task_executor, [this] {

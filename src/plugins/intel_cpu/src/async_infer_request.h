@@ -9,14 +9,14 @@
 #include <vector>
 
 #include "infer_request.h"
-#include "openvino/runtime/iasync_infer_request.hpp"
+#include "openvino/runtime/async_infer_request.hpp"
 #include "openvino/runtime/iinfer_request.hpp"
 #include "openvino/runtime/threading/istreams_executor.hpp"
 #include "openvino/runtime/threading/itask_executor.hpp"
 
 namespace ov::intel_cpu {
 
-class AsyncInferRequest : public ov::IAsyncInferRequest {
+class AsyncInferRequest : public ov::AsyncInferRequest {
 public:
     AsyncInferRequest(const std::shared_ptr<IInferRequest>& request,
                       const std::shared_ptr<ov::threading::ITaskExecutor>& task_executor,

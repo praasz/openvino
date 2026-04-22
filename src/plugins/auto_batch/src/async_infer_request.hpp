@@ -5,12 +5,12 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include "openvino/runtime/iasync_infer_request.hpp"
+#include "openvino/runtime/async_infer_request.hpp"
 #include "sync_infer_request.hpp"
 
 namespace ov {
 namespace autobatch_plugin {
-class AsyncInferRequest : public ov::IAsyncInferRequest {
+class AsyncInferRequest : public ov::AsyncInferRequest {
 public:
     AsyncInferRequest(const std::shared_ptr<SyncInferRequest>& request,
                       const ov::SoPtr<ov::IAsyncInferRequest>& request_without_batch,

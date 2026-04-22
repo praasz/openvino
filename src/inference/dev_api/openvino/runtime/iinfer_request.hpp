@@ -22,7 +22,6 @@
 
 namespace ov {
 
-class IAsyncInferRequest;
 class ICompiledModel;
 
 /**
@@ -122,7 +121,13 @@ protected:
      * @brief Check that all tensors are valid. Throws an exception if it's not.
      */
     virtual void check_tensors() const = 0;
-    friend IAsyncInferRequest;
+
+    /**
+     * @brief Allows derived classes to invoke check_tensors() on any IInferRequest instance.
+     */
+    static void invoke_check_tensors(const IInferRequest& request) {
+        request.check_tensors();
+    }
 };
 
 };  // namespace ov

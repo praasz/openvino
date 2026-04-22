@@ -14,7 +14,7 @@ ov::template_plugin::AsyncInferRequest::AsyncInferRequest(
     const std::shared_ptr<ov::threading::ITaskExecutor>& task_executor,
     const std::shared_ptr<ov::threading::ITaskExecutor>& wait_executor,
     const std::shared_ptr<ov::threading::ITaskExecutor>& callback_executor)
-    : ov::IAsyncInferRequest(request, task_executor, callback_executor),
+    : ov::AsyncInferRequest(request, task_executor, callback_executor),
       m_wait_executor(wait_executor) {
     // In current implementation we have CPU only tasks and no needs in 2 executors
     // So, by default single stage pipeline is created.
@@ -51,13 +51,13 @@ ov::template_plugin::AsyncInferRequest::AsyncInferRequest(
 
 // ! [async_infer_request:dtor]
 ov::template_plugin::AsyncInferRequest::~AsyncInferRequest() {
-    ov::IAsyncInferRequest::stop_and_wait();
+    ov::AsyncInferRequest::stop_and_wait();
 }
 // ! [async_infer_request:dtor]
 
 // ! [async_infer_request:cancel]
 void ov::template_plugin::AsyncInferRequest::cancel() {
-    ov::IAsyncInferRequest::cancel();
+    ov::AsyncInferRequest::cancel();
     m_cancel_callback();
 }
 // ! [async_infer_request:cancel]

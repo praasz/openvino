@@ -12,7 +12,7 @@ namespace autobatch_plugin {
 AsyncInferRequest::AsyncInferRequest(const std::shared_ptr<SyncInferRequest>& request,
                                      const ov::SoPtr<ov::IAsyncInferRequest>& request_without_batch,
                                      const std::shared_ptr<ov::threading::ITaskExecutor>& callback_executor)
-    : ov::IAsyncInferRequest(request, nullptr, callback_executor),
+    : ov::AsyncInferRequest(request, nullptr, callback_executor),
       m_sync_request(request),
       m_request_without_batch(request_without_batch) {
     if (m_sync_request && m_sync_request->get_batch_size() == 0) {
@@ -96,7 +96,7 @@ void AsyncInferRequest::set_tensor(const ov::Output<const ov::Node>& port, const
     if (m_sync_request && m_sync_request->get_batch_size() == 0) {
         m_request_without_batch->set_tensor(port, tensor);
     }
-    ov::IAsyncInferRequest::set_tensor(port, tensor);
+    ov::AsyncInferRequest::set_tensor(port, tensor);
 }
 
 void AsyncInferRequest::set_tensors(const ov::Output<const ov::Node>& port,
@@ -105,7 +105,7 @@ void AsyncInferRequest::set_tensors(const ov::Output<const ov::Node>& port,
     if (m_sync_request && m_sync_request->get_batch_size() == 0) {
         m_request_without_batch->set_tensors(port, tensors);
     }
-    ov::IAsyncInferRequest::set_tensors(port, tensors);
+    ov::AsyncInferRequest::set_tensors(port, tensors);
 }
 
 std::vector<ov::ProfilingInfo> AsyncInferRequest::get_profiling_info() const {

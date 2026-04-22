@@ -5,13 +5,14 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include "schedule.hpp"
 #include "infer_request.hpp"
+#include "openvino/runtime/async_infer_request.hpp"
+#include "schedule.hpp"
 
 namespace ov {
 namespace auto_plugin {
 // ! [async_infer_request:header]
-class AsyncInferRequest : public ov::IAsyncInferRequest {
+class AsyncInferRequest : public ov::AsyncInferRequest {
 public:
     AsyncInferRequest(const Schedule::Ptr& schedule,
                       const std::shared_ptr<ov::auto_plugin::InferRequest>& request,
