@@ -153,7 +153,7 @@ ov::Any ov::template_plugin::CompiledModel::get_property(const std::string& name
         return decltype(ov::optimal_number_of_infer_requests)::value_type(value);
     } else if (ov::runtime_requirements == name) {
         // A real plugin would encode compilation capabilities.
-        return std::string(get_template_plugin()->get_compile_requirements());
+        return std::string(get_template_plugin()->get_runtime_requirements());
     } else if (ov::supported_properties == name) {
         auto ro_properties = default_ro_properties();
         auto rw_properties = default_rw_properties();

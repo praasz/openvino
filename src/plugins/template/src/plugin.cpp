@@ -420,7 +420,7 @@ ov::Any ov::template_plugin::Plugin::get_property(const std::string& name, const
         if (auto it = arguments.find(ov::runtime_requirements.name()); it != arguments.end()) {
             const auto& requirements = it->second.as<std::string>();
             if (!requirements.empty()) {
-                if (const auto pos = requirements.find(get_compile_requirements()); pos == 0) {
+                if (const auto pos = requirements.find(get_runtime_requirements()); pos == 0) {
                     return ov::CompatibilityCheck::OPTIMAL;
                 } else if (pos != std::string::npos) {
                     return ov::CompatibilityCheck::PREFER_RECOMPILATION;
@@ -441,8 +441,8 @@ static const ov::Version version = {CI_BUILD_NUMBER, "openvino_template_plugin"}
 OV_DEFINE_PLUGIN_CREATE_FUNCTION(ov::template_plugin::Plugin, version)
 // ! [plugin:create_plugin_engine]
 
-// ! [plugin:get_compile_requirements]
-std::string_view ov::template_plugin::Plugin::get_compile_requirements() const {
+// ! [plugin:get_runtime_requirements]
+std::string_view ov::template_plugin::Plugin::get_runtime_requirements() const {
     return "TEMPLATE_PLUGIN_CAPABILITIES_v1";
 }
-// ! [plugin:get_compile_requirements]
+// ! [plugin:get_runtime_requirements]

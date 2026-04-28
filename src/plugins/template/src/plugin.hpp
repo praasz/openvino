@@ -56,7 +56,7 @@ public:
 private:
     friend class CompiledModel;
     friend class InferRequest;
-    std::string_view get_compile_requirements() const;
+    std::string_view get_runtime_requirements() const;
 
     std::shared_ptr<ov::runtime::Backend> m_backend;
     Configuration m_cfg;
