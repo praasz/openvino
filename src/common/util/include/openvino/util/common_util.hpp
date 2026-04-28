@@ -80,7 +80,7 @@ auto join(const Container& c, std::string_view sep = ", ") {
  *  - std::vector<int>{}      -> "[  ]"
  *
  * @param v  Vector to be converted
- * @return String contains the vector elements
+ * @return String containing the vector elements
  */
 template <typename T, typename A>
 std::string vector_to_string(const std::vector<T, A>& v) {
