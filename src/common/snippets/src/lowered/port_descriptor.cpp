@@ -7,6 +7,7 @@
 #include <cassert>
 #include <cstddef>
 #include <memory>
+#include <ostream>
 #include <snippets/utils/utils.hpp>
 #include <sstream>
 #include <string>
