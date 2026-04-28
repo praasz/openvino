@@ -28,9 +28,7 @@ TEST(PropertyTest, CompiledModelExposesRuntimeRequirements) {
     ASSERT_TRUE(ov::util::contains(supported, ov::runtime_requirements.name()));
 
     const auto reqs = compiled.get_property(ov::runtime_requirements);
-    EXPECT_TRUE(reqs);
-    EXPECT_EQ(reqs.get_size(), 1U);
-    EXPECT_EQ(reqs.get_element_type(), element::string);
+    EXPECT_FALSE(reqs.empty());
 }
 
 TEST(PropertyTest, PluginReportsRequirementsMetForValidRequirements) {
@@ -38,10 +36,10 @@ TEST(PropertyTest, PluginReportsRequirementsMetForValidRequirements) {
     auto compiled = core->compile_model(make_simple_model(), "TEMPLATE");
 
     const auto reqs = compiled.get_property(ov::runtime_requirements);
-    ASSERT_TRUE(reqs);
+    ASSERT_FALSE(reqs.empty());
 
-    const auto compat = core->get_property("TEMPLATE", ov::blob_compatibility, ov::runtime_requirements(reqs));
-    EXPECT_EQ(compat, ov::BlobCompatibility::OPTIMAL);
+    const auto compat = core->get_property("TEMPLATE", ov::compatibility_check, ov::runtime_requirements(reqs));
+    EXPECT_EQ(compat, ov::CompatibilityCheck::OPTIMAL);
 }
 
 TEST(PropertyTest, PluginRejectsModifiedRequirements) {
@@ -49,13 +47,12 @@ TEST(PropertyTest, PluginRejectsModifiedRequirements) {
     auto compiled = core->compile_model(make_simple_model(), "TEMPLATE");
 
     const auto reqs = compiled.get_property(ov::runtime_requirements);
-    ASSERT_TRUE(reqs);
+    ASSERT_FALSE(reqs.empty());
 
-    ov::Tensor tampered(ov::element::string, {});
-    tampered.data<std::string>()[0] = "_tampered";
+    std::string tampered = "_tampered";
 
-    EXPECT_EQ(core->get_property("TEMPLATE", ov::blob_compatibility, ov::runtime_requirements(tampered)),
-              ov::BlobCompatibility::UNSUPPORTED);
+    EXPECT_EQ(core->get_property("TEMPLATE", ov::compatibility_check, ov::runtime_requirements(tampered)),
+              ov::CompatibilityCheck::UNSUPPORTED);
 }
 
 TEST(PropertyTest, PluginAcceptModifiedRequirements) {
@@ -63,32 +60,31 @@ TEST(PropertyTest, PluginAcceptModifiedRequirements) {
     auto compiled = core->compile_model(make_simple_model(), "TEMPLATE");
 
     const auto reqs = compiled.get_property(ov::runtime_requirements);
-    ASSERT_TRUE(reqs);
+    ASSERT_FALSE(reqs.empty());
 
-    ov::Tensor tampered(ov::element::string, {});
-    tampered.data<std::string>()[0] = "tampered_" + reqs.data<std::string>()[0];
+    std::string tampered = "tampered_" + reqs;
 
-    EXPECT_EQ(core->get_property("TEMPLATE", ov::blob_compatibility, ov::runtime_requirements(tampered)),
-              ov::BlobCompatibility::PREFER_RECOMPILATION);
+    EXPECT_EQ(core->get_property("TEMPLATE", ov::compatibility_check, ov::runtime_requirements(tampered)),
+              ov::CompatibilityCheck::PREFER_RECOMPILATION);
 }
 
 TEST(PropertyTest, PluginRejectsEmptyRequirements) {
     auto core = ov::test::utils::PluginCache::get().core("TEMPLATE");
 
-    const ov::Tensor empty_reqs;
-    EXPECT_EQ(core->get_property("TEMPLATE", ov::blob_compatibility, ov::runtime_requirements(empty_reqs)),
-              ov::BlobCompatibility::NOT_APPLICABLE);
+    const std::string empty_reqs;
+    EXPECT_EQ(core->get_property("TEMPLATE", ov::compatibility_check, ov::runtime_requirements(empty_reqs)),
+              ov::CompatibilityCheck::NOT_APPLICABLE);
 }
 
 TEST(PropertyTest, PluginReturnsNotApplicableWithoutArguments) {
     auto core = ov::test::utils::PluginCache::get().core("TEMPLATE");
-    const auto compat = core->get_property("TEMPLATE", ov::blob_compatibility);
-    EXPECT_EQ(compat, ov::BlobCompatibility::NOT_APPLICABLE);
+    const auto compat = core->get_property("TEMPLATE", ov::compatibility_check);
+    EXPECT_EQ(compat, ov::CompatibilityCheck::NOT_APPLICABLE);
 }
 
 TEST(PropertyTest, RuntimeRequirementsMetListedInSupportedProperties) {
     auto core = ov::test::utils::PluginCache::get().core("TEMPLATE");
     const auto supported = core->get_property("TEMPLATE", ov::supported_properties);
-    EXPECT_TRUE(ov::util::contains(supported, ov::blob_compatibility.name()));
+    EXPECT_TRUE(ov::util::contains(supported, ov::compatibility_check.name()));
 }
 }  // namespace ov::test

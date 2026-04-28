@@ -55,16 +55,16 @@ def test_properties_rw_base():
             ),
         ),
         (
-            props.BlobCompatibility,
+            props.CompatibilityCheck,
             (
-                (props.BlobCompatibility.NOT_APPLICABLE, "BlobCompatibility.NOT_APPLICABLE", 0),
-                (props.BlobCompatibility.OPTIMAL, "BlobCompatibility.OPTIMAL", 1),
+                (props.CompatibilityCheck.NOT_APPLICABLE, "CompatibilityCheck.NOT_APPLICABLE", 0),
+                (props.CompatibilityCheck.OPTIMAL, "CompatibilityCheck.OPTIMAL", 1),
                 (
-                    props.BlobCompatibility.PREFER_RECOMPILATION,
-                    "BlobCompatibility.PREFER_RECOMPILATION",
+                    props.CompatibilityCheck.PREFER_RECOMPILATION,
+                    "CompatibilityCheck.PREFER_RECOMPILATION",
                     2,
                 ),
-                (props.BlobCompatibility.UNSUPPORTED, "BlobCompatibility.UNSUPPORTED", 3),
+                (props.CompatibilityCheck.UNSUPPORTED, "CompatibilityCheck.UNSUPPORTED", 3),
             ),
         ),
         (
@@ -198,7 +198,7 @@ def test_conflicting_enum(proxy_enums, expected_values):
         (props.range_for_async_infer_requests, "RANGE_FOR_ASYNC_INFER_REQUESTS"),
         (props.execution_devices, "EXECUTION_DEVICES"),
         (props.loaded_from_cache, "LOADED_FROM_CACHE"),
-        (props.blob_compatibility, "BLOB_COMPATIBILITY"),
+        (props.compatibility_check, "COMPATIBILITY_CHECK"),
         (device.full_name, "FULL_DEVICE_NAME"),
         (device.architecture, "DEVICE_ARCHITECTURE"),
         (device.type, "DEVICE_TYPE"),
@@ -569,11 +569,9 @@ def test_runtime_requirements_property():
     assert props.runtime_requirements == "RUNTIME_REQUIREMENTS"
     assert props.runtime_requirements() == "RUNTIME_REQUIREMENTS"
 
-    tensor = ov.Tensor(Type.u8, [16])
-    prop = props.runtime_requirements(tensor)
+    prop = props.runtime_requirements("some_requirement_string")
     assert prop[0] == "RUNTIME_REQUIREMENTS"
-    assert prop[1].value.element_type == Type.u8
-    assert prop[1].value.shape == [16]
+    assert prop[1].value == "some_requirement_string"
 
 
 def test_properties_device_priorities():

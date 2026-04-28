@@ -353,7 +353,7 @@ ov::Any ov::template_plugin::Plugin::get_property(const std::string& name, const
                                                     ov::device::type,
                                                     ov::range_for_async_infer_requests,
                                                     ov::execution_devices,
-                                                    ov::blob_compatibility};
+                                                    ov::compatibility_check};
         return ro_properties;
     };
     const auto& default_rw_properties = []() {
@@ -416,21 +416,20 @@ ov::Any ov::template_plugin::Plugin::get_property(const std::string& name, const
         return decltype(ov::execution_devices)::value_type{get_device_name()};
     } else if (ov::range_for_async_infer_requests == name) {
         return decltype(ov::range_for_async_infer_requests)::value_type{1, 1, 1};
-    } else if (ov::blob_compatibility == name) {
+    } else if (ov::compatibility_check == name) {
         if (auto it = arguments.find(ov::runtime_requirements.name()); it != arguments.end()) {
-            const auto& requirements = it->second.as<ov::Tensor>();
-            if (requirements && requirements.get_size() == 1 &&
-                requirements.get_element_type() == ov::element::string) {
-                if (const auto pos = requirements.data<std::string>()[0].find(get_compile_requirements()); pos == 0) {
-                    return ov::BlobCompatibility::OPTIMAL;
+            const auto& requirements = it->second.as<std::string>();
+            if (!requirements.empty()) {
+                if (const auto pos = requirements.find(get_compile_requirements()); pos == 0) {
+                    return ov::CompatibilityCheck::OPTIMAL;
                 } else if (pos != std::string::npos) {
-                    return ov::BlobCompatibility::PREFER_RECOMPILATION;
+                    return ov::CompatibilityCheck::PREFER_RECOMPILATION;
                 } else {
-                    return ov::BlobCompatibility::UNSUPPORTED;
+                    return ov::CompatibilityCheck::UNSUPPORTED;
                 }
             }
         }
-        return ov::BlobCompatibility::NOT_APPLICABLE;
+        return ov::CompatibilityCheck::NOT_APPLICABLE;
     } else {
         return m_cfg.Get(name);
     }
