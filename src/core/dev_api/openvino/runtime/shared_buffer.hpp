@@ -30,10 +30,28 @@ public:
         m_byte_size = 0;
     }
 
-    virtual void hint_evict() noexcept override {}
+    virtual void hint_evict() noexcept override {
+        if constexpr (std::is_same_v<std::shared_ptr<ov::MappedMemory>, T>) {
+            if (m_shared_object) {
+                m_shared_object->hint_evict(get_offset(), m_byte_size);
+            }
+        } else if constexpr (std::is_same_v<std::shared_ptr<ov::AlignedBuffer>, T>) {
+            if (m_shared_object) {
+                invoke_evict(*m_shared_object, get_offset(), m_byte_size);
+            }
+        } else {
+        }
+    }
 
 protected:
-    virtual void hint_evict(size_t offset, size_t size) noexcept override {}
+    virtual void hint_evict(size_t offset, size_t size) noexcept override {
+        if constexpr (std::is_same_v<std::shared_ptr<ov::MappedMemory>, T>) {
+            if (m_shared_object) {
+                m_shared_object->hint_evict(offset, size);
+            }
+        } else {
+        }
+    }
 
     // protected to not create SharedBufferBase directly
     SharedBufferBase(char* data,
@@ -82,15 +100,6 @@ protected:
     std::shared_ptr<ov::AlignedBuffer> m_source_buffer;
     std::shared_ptr<IBufferDescriptor> m_descriptor;
 };
-
-template <>
-OPENVINO_API void SharedBufferBase<std::shared_ptr<ov::MappedMemory>>::hint_evict() noexcept;
-
-template <>
-OPENVINO_API void SharedBufferBase<std::shared_ptr<ov::MappedMemory>>::hint_evict(size_t offset, size_t size) noexcept;
-
-template <>
-OPENVINO_API void SharedBufferBase<std::shared_ptr<ov::AlignedBuffer>>::hint_evict() noexcept;
 
 template <typename T>
 class SharedBuffer : public SharedBufferBase<T> {
