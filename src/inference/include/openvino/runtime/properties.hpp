@@ -1454,12 +1454,12 @@ enum class CompatibilityCheck {
 };
 
 /** @cond INTERNAL */
-inline std::ostream& operator<<(std::ostream& os, const CompatibilityCheck& compatiblity) {
-    switch (compatiblity) {
+inline std::ostream& operator<<(std::ostream& os, const CompatibilityCheck& compatibility) {
+    switch (compatibility) {
     case CompatibilityCheck::NOT_APPLICABLE:
         return os << "NOT_APPLICABLE";
     case CompatibilityCheck::OPTIMAL:
-        return os << "SUPPORTED";
+        return os << "OPTIMAL";
     case CompatibilityCheck::PREFER_RECOMPILATION:
         return os << "PREFER_RECOMPILATION";
     case CompatibilityCheck::UNSUPPORTED:
@@ -1474,7 +1474,7 @@ inline std::istream& operator>>(std::istream& is, CompatibilityCheck& compatibil
     is >> str;
     if (str == "NOT_APPLICABLE") {
         compatibility = CompatibilityCheck::NOT_APPLICABLE;
-    } else if (str == "SUPPORTED") {
+    } else if (str == "OPTIMAL") {
         compatibility = CompatibilityCheck::OPTIMAL;
     } else if (str == "PREFER_RECOMPILATION") {
         compatibility = CompatibilityCheck::PREFER_RECOMPILATION;
