@@ -82,7 +82,7 @@ TEST(PropertyTest, PluginReturnsNotApplicableWithoutArguments) {
     EXPECT_EQ(compat, ov::CompatibilityCheck::NOT_APPLICABLE);
 }
 
-TEST(PropertyTest, RuntimeRequirementsMetListedInSupportedProperties) {
+TEST(PropertyTest, CompatibilityCheckListedInSupportedProperties) {
     auto core = ov::test::utils::PluginCache::get().core("TEMPLATE");
     const auto supported = core->get_property("TEMPLATE", ov::supported_properties);
     EXPECT_TRUE(ov::util::contains(supported, ov::compatibility_check.name()));
