@@ -1488,7 +1488,7 @@ inline std::istream& operator>>(std::istream& is, CompatibilityCheck& compatibil
 /** @endcond */
 
 /**
- * @brief Read-write property carrying plugin-specific runtime requirements of a compiled model blob.
+ * @brief Read-only property carrying plugin-specific runtime requirements of a compiled model blob.
  * @ingroup ov_runtime_cpp_prop_api
  *
  * The property value is a std::string encoding the device environment requirements at the time
@@ -1501,8 +1501,13 @@ inline std::istream& operator>>(std::istream& is, CompatibilityCheck& compatibil
  * auto compiled_model = core.compile_model(model, "NPU");
  * std::string requirements = compiled_model.get_property(ov::runtime_requirements);
  * @endcode
+ *
+ * **Passing as a hint** — use the property name to construct a hint pair when querying ov::compatibility_check:
+ * @code
+ * auto compat = core.get_property("NPU", ov::compatibility_check, {{ov::runtime_requirements.name(), requirements}});
+ * @endcode
  */
-inline constexpr Property<std::string, PropertyMutability::RW> runtime_requirements{"RUNTIME_REQUIREMENTS"};
+inline constexpr Property<std::string, PropertyMutability::RO> runtime_requirements{"RUNTIME_REQUIREMENTS"};
 
 /**
  * @brief Read-only property to check whether a device satisfies the runtime requirements of a compiled model blob.
@@ -1520,7 +1525,7 @@ inline constexpr Property<std::string, PropertyMutability::RW> runtime_requireme
  * @code
  * auto compiled_model = core.compile_model(model, "NPU");
  * auto requirements = compiled_model.get_property(ov::runtime_requirements);
- * auto compat = core.get_property("NPU", ov::compatibility_check, ov::runtime_requirements(requirements));
+ * auto compat = core.get_property("NPU", ov::compatibility_check, {{ov::runtime_requirements.name(), requirements}});
  * if (compat == ov::CompatibilityCheck::OPTIMAL ||
  *     compat == ov::CompatibilityCheck::PREFER_RECOMPILATION) {
  *     auto imported = core.import_model(blob_stream, "NPU");

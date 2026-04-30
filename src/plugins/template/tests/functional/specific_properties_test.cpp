@@ -38,7 +38,8 @@ TEST(PropertyTest, PluginReportsRequirementsMetForValidRequirements) {
     const auto reqs = compiled.get_property(ov::runtime_requirements);
     ASSERT_FALSE(reqs.empty());
 
-    const auto compat = core->get_property("TEMPLATE", ov::compatibility_check, ov::runtime_requirements(reqs));
+    const auto compat =
+        core->get_property("TEMPLATE", ov::compatibility_check, std::make_pair(ov::runtime_requirements.name(), reqs));
     EXPECT_EQ(compat, ov::CompatibilityCheck::OPTIMAL);
 }
 
@@ -49,9 +50,9 @@ TEST(PropertyTest, PluginRejectsModifiedRequirements) {
     const auto reqs = compiled.get_property(ov::runtime_requirements);
     ASSERT_FALSE(reqs.empty());
 
-    std::string tampered = "_tampered";
-
-    EXPECT_EQ(core->get_property("TEMPLATE", ov::compatibility_check, ov::runtime_requirements(tampered)),
+    EXPECT_EQ(core->get_property("TEMPLATE",
+                                 ov::compatibility_check,
+                                 ov::AnyMap{{ov::runtime_requirements.name(), "_tampered"}}),
               ov::CompatibilityCheck::UNSUPPORTED);
 }
 
@@ -64,7 +65,7 @@ TEST(PropertyTest, PluginAcceptModifiedRequirements) {
 
     std::string tampered = "tampered_" + reqs;
 
-    EXPECT_EQ(core->get_property("TEMPLATE", ov::compatibility_check, ov::runtime_requirements(tampered)),
+    EXPECT_EQ(core->get_property("TEMPLATE", ov::compatibility_check, {{ov::runtime_requirements.name(), tampered}}),
               ov::CompatibilityCheck::PREFER_RECOMPILATION);
 }
 
@@ -72,7 +73,7 @@ TEST(PropertyTest, PluginRejectsEmptyRequirements) {
     auto core = ov::test::utils::PluginCache::get().core("TEMPLATE");
 
     const std::string empty_reqs;
-    EXPECT_EQ(core->get_property("TEMPLATE", ov::compatibility_check, ov::runtime_requirements(empty_reqs)),
+    EXPECT_EQ(core->get_property("TEMPLATE", ov::compatibility_check, {{ov::runtime_requirements.name(), empty_reqs}}),
               ov::CompatibilityCheck::NOT_APPLICABLE);
 }
 

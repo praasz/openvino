@@ -49,7 +49,6 @@ void regmodule_properties(py::module m) {
     wrap_property_RW(m_properties, ov::key_cache_group_size, "key_cache_group_size");
     wrap_property_RW(m_properties, ov::value_cache_group_size, "value_cache_group_size");
     wrap_property_RW(m_properties, ov::enable_weightless, "enable_weightless");
-    wrap_property_RW(m_properties, ov::runtime_requirements, "runtime_requirements");
 
     wrap_property_RO(m_properties, ov::supported_properties, "supported_properties");
     wrap_property_RO(m_properties, ov::available_devices, "available_devices");
@@ -62,6 +61,7 @@ void regmodule_properties(py::module m) {
     wrap_property_RO(m_properties, ov::execution_devices, "execution_devices");
     wrap_property_RO(m_properties, ov::loaded_from_cache, "loaded_from_cache");
     wrap_property_RO(m_properties, ov::compatibility_check, "compatibility_check");
+    wrap_property_RO(m_properties, ov::runtime_requirements, "runtime_requirements");
 
     wrap_property_WO(m_properties, ov::cache_encryption_callbacks, "cache_encryption_callbacks");
 
