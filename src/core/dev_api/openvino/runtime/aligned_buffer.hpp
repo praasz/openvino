@@ -22,9 +22,7 @@ public:
     virtual ~IBufferDescriptor();
 };
 
-/// \brief Allocates a block of memory on the specified alignment boundary.
-/// The allocated memory is exactly the requested size (rounded up to a multiple of the alignment)
-/// and guaranteed to start at an address aligned to \p alignment.
+/// \brief Allocates a block of memory which starts at an aligned address determined by \p alignment.
 class OPENVINO_API AlignedBuffer {
 public:
     // Allocator objects and the allocation interfaces are owned by the
