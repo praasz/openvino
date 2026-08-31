@@ -7,9 +7,7 @@ set(TARGET_NAME "openvino_frontend_common")
 set(FRONTEND_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(FRONTEND_DEV_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dev_api)
 
-file(GLOB_RECURSE LIBRARY_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
-file(GLOB_RECURSE LIBRARY_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp)
-file(GLOB_RECURSE LIBRARY_PUBLIC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp)
+include(sources.cmake)
 
 source_group("src" FILES ${LIBRARY_SRC})
 source_group("include" FILES ${LIBRARY_HEADERS})

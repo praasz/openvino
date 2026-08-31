@@ -5,8 +5,29 @@
 set(TARGET_NAME "openvino_common_translators")
 get_filename_component(root_dir "${CMAKE_CURRENT_SOURCE_DIR}" DIRECTORY)
 
-file(GLOB_RECURSE LIBRARY_SRC ${root_dir}/src/*.cpp)
-file(GLOB_RECURSE LIBRARY_HEADERS ${root_dir}/include/*.hpp)
+set(LIBRARY_SRC
+    ${root_dir}/src/op/angle.cpp
+    ${root_dir}/src/op/atan2.cpp
+    ${root_dir}/src/op/bincount.cpp
+    ${root_dir}/src/op/complex.cpp
+    ${root_dir}/src/op/equal.cpp
+    ${root_dir}/src/op/erfc.cpp
+    ${root_dir}/src/op/unsqueeze.cpp
+    ${root_dir}/src/sequence_array_lowering.cpp
+    ${root_dir}/src/sequence_concat_replacer.cpp
+    ${root_dir}/src/sequence_if_replacer.cpp
+    ${root_dir}/src/slot_resolver.cpp
+    ${root_dir}/src/unconverted_ops_report.cpp
+    ${root_dir}/src/utils.cpp
+)
+set(LIBRARY_HEADERS
+    ${root_dir}/include/common_translators.hpp
+    ${root_dir}/include/sequence_array_lowering.hpp
+    ${root_dir}/include/sequence_concat_replacer.hpp
+    ${root_dir}/include/sequence_if_replacer.hpp
+    ${root_dir}/include/unconverted_ops_report.hpp
+    ${root_dir}/src/slot_resolver.hpp
+)
 
 add_library(${TARGET_NAME} STATIC ${LIBRARY_SRC} ${LIBRARY_HEADERS})
 add_library(openvino::frontend::common_translators ALIAS ${TARGET_NAME})

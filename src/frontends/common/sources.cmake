@@ -1,0 +1,62 @@
+# Copyright (C) 2018-2026 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+
+set(LIBRARY_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/complex_type_mark.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/concat_from_sequence.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/decoder.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/exception.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/extension/conversion.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/extension/decoder_transformation.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/extension/progress_reporter.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/extension/telemetry.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/frontend.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graph_iterator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hash_table.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/input_model.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/manager.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/node_context.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/place.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/plugin_loader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/random_normal_helper.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/sequence_at.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/sequence_erase.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/sequence_insert.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/sequence_length.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/sequence_mark.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/variable.cpp
+)
+
+set(LIBRARY_HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/plugin_loader.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utils.hpp
+)
+
+set(LIBRARY_PUBLIC_HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/complex_type_mark.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/concat_from_sequence.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/decoder.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/exception.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/extension.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/extension/conversion.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/extension/decoder_transformation.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/extension/holder.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/extension/op.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/extension/progress_reporter.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/extension/telemetry.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/frontend.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/graph_iterator.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/hash_table.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/input_model.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/manager.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/node_context.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/place.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/sequence_at.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/sequence_erase.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/sequence_insert.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/sequence_length.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/sequence_mark.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/variable.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/openvino/frontend/visibility.hpp
+)
