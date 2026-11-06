@@ -123,18 +123,12 @@ void ITensor::copy_to(const std::shared_ptr<ov::ITensor>& dst) const {
                     max_pos.resize(strides_size + 1);
                     cur_pos.resize(strides_size + 1);
 
-                    // In case of default continuous strides we can copy several elements
-                    // In other case only one element
-                    size_t dim = 1;
-                    size_t strides = type.size();
-
-                    if (strides_size < default_strides.size()) {
-                        strides = default_strides[strides_size];
-                        dim = byte_shape[strides_size];
-                    }
-                    src_str[strides_size] = strides;
-                    dst_str[strides_size] = strides;
-                    max_pos[strides_size] = dim;
+                    // Dimensions after inverted_idx have default strides in both tensors, so they can be
+                    // copied as one contiguous block of default_strides[inverted_idx] bytes.
+                    const auto block_size = default_strides[inverted_idx];
+                    src_str[strides_size] = block_size;
+                    dst_str[strides_size] = block_size;
+                    max_pos[strides_size] = 1;
                     cur_pos[strides_size] = 0;
                 }
             }

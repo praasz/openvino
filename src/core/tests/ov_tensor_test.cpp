@@ -1441,6 +1441,10 @@ INSTANTIATE_TEST_SUITE_P(copy_tests,
                                                               TestParams{
                                                                   ov::Shape{3,2,2}, ov::Strides{64,16,8},
                                                                   ov::Shape{3,4,3}, ov::Strides{128,24,8}
+                                                              },
+                                                              TestParams{
+                                                                  ov::Shape{2, 100}, ov::Strides{1000, 8},
+                                                                  ov::Shape{2, 100}, {}
                                                               }
                                            )));
 
