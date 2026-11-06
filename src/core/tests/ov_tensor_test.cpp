@@ -4,6 +4,7 @@
 
 #include <gmock/gmock.h>
 
+#include <algorithm>
 #include <chrono>
 #include <cstdint>
 #include <cstring>
@@ -871,6 +872,19 @@ TEST_F(OVTensorTest, roiLpCopyToExceedsDestinationCapacityThrows) {
     OV_ASSERT_NO_THROW(dst = ov::Tensor(dst_owner, {0, 0, 4090, 0}, {1, 2, 4095, 512}));
 
     OV_EXPECT_THROW(src.copy_to(dst), ov::Exception, _);
+}
+
+TEST_F(OVTensorTest, roiLpCopyToZeroExtentMiddleDimDoesNotHang) {
+    ov::Tensor owner{ov::element::i4, {2, 3, 8}};
+    ov::Tensor src;
+    OV_ASSERT_NO_THROW(src = ov::Tensor(owner, {0, 0, 0}, {2, 0, 8}));
+    ASSERT_EQ(src.get_shape(), ov::Shape({2, 0, 8}));
+    ASSERT_EQ(src.get_strides(), ov::Strides({12, 4, 1}));
+
+    ov::Tensor dst{ov::element::i4, {1}};
+    OV_ASSERT_NO_THROW(src.copy_to(dst));
+    EXPECT_EQ(dst.get_shape(), ov::Shape({2, 0, 8}));
+    EXPECT_EQ(dst.get_byte_size(), 0u);
 }
 
 TEST_F(OVTensorTest, roiLpInnerDimSliceThrows) {
