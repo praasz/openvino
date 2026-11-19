@@ -92,8 +92,8 @@ public:
 protected:
     template <typename T, class... Args>
     std::shared_ptr<T> push_pass(Args&&... args) {
-        static_assert(std::is_base_of<pass::PassBase, T>::value, "pass not derived from pass base");
-        auto pass = std::make_shared<T>(std::forward<Args>(args)...);
+        static_assert(std::is_base_of_v<pass::PassBase, T>, "pass not derived from pass base");
+        auto pass = PassBase::make<T>(std::forward<Args>(args)...);
         m_pass_list.push_back(pass);
         return pass;
     }

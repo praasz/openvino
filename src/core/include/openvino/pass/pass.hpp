@@ -6,6 +6,8 @@
 
 #include <memory>
 #include <string>
+#include <type_traits>
+#include <utility>
 
 #include "openvino/core/core_visibility.hpp"
 #include "openvino/core/enum_mask.hpp"
@@ -85,7 +87,29 @@ public:
 protected:
     void set_property(const PassPropertyMask& prop, bool value);
 
+    /// \brief Creates a pass owned by one control block type shared by all pass types,
+    /// instead of the per-type control block (with its own vtable and typeinfo) of std::make_shared<T>.
+    /// Used by Manager and GraphRewrite. The pass type's own vtable is unaffected.
+    template <class T, class... Args>
+    static std::shared_ptr<T> make(Args&&... args) {
+        static_assert(std::is_base_of_v<PassBase, T>, "pass not derived from pass base");
+        if constexpr (HasWeakFromThis<T>::value) {
+            // shared_from_this() needs the pass to be owned by a shared_ptr<T> created by std::make_shared
+            return std::make_shared<T>(std::forward<Args>(args)...);
+        } else {
+            auto owner = std::make_unique<T>(std::forward<Args>(args)...);
+            T* raw = owner.get();
+            PassBase* base = owner.release();  // shared_ptr deletes it if the control block allocation throws
+            return std::shared_ptr<T>(std::shared_ptr<PassBase>(base), raw);
+        }
+    }
+
 private:
+    template <class T, class = void>
+    struct HasWeakFromThis : std::false_type {};
+    template <class T>
+    struct HasWeakFromThis<T, std::void_t<decltype(std::declval<T&>().weak_from_this())>> : std::true_type {};
+
     PassPropertyMask m_property;
 
     std::string m_name;

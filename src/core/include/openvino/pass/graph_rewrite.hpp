@@ -75,13 +75,14 @@ public:
               typename std::enable_if<std::is_base_of<pass::MatcherPass, T>::value, bool>::type = true>
     std::shared_ptr<T> add_matcher(Args&&... args) {
         static_assert(std::is_base_of<pass::MatcherPass, T>::value, "pass not derived from MatcherPass");
-        auto pass = std::make_shared<T>(std::forward<Args>(args)...);
-        auto pass_config = get_pass_config();
-        pass->set_pass_config(pass_config);
-        if (!Enabled && !pass_config->is_enabled<T>()) {
-            pass_config->disable<T>();
+        auto pass = PassBase::make<T>(std::forward<Args>(args)...);
+        if constexpr (!Enabled) {
+            auto pass_config = get_pass_config();
+            if (!pass_config->is_enabled<T>()) {
+                pass_config->disable<T>();
+            }
         }
-        m_matchers.push_back(pass);
+        add_matcher(std::static_pointer_cast<MatcherPass>(pass));
         return pass;
     }
 
@@ -112,7 +113,7 @@ public:
               typename std::enable_if<std::is_base_of<pass::GraphRewrite, T>::value, bool>::type = true>
     void add_matcher(Args&&... args) {
         static_assert(std::is_base_of<pass::GraphRewrite, T>::value, "pass not derived from GraphRewrite");
-        auto pass = std::make_shared<T>(std::forward<Args>(args)...);
+        auto pass = PassBase::make<T>(std::forward<Args>(args)...);
         auto pass_config = get_pass_config();
 
         for (auto& matcher : pass->m_matchers) {
