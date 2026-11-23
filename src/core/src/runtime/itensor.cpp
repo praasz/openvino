@@ -79,7 +79,8 @@ void ITensor::copy_to(const std::shared_ptr<ov::ITensor>& dst) const {
                     dst->get_element_type(),
                     ")");
 
-    const auto& shape = get_shape();
+    // Copy of the metadata, so the copy path works on one consistent snapshot
+    const auto shape = get_shape();
     if (shape != dst->get_shape()) {
         dst->set_shape(shape);
     }
@@ -100,7 +101,10 @@ void ITensor::copy_to(const std::shared_ptr<ov::ITensor>& dst) const {
     ov::Shape cur_pos{0};
     ov::Shape max_pos{1};
 
-    if (get_element_type().bitwidth() < 8 || (get_strides() == dst->get_strides() && is_continuous()) ||
+    const auto src_byte_strides = get_strides();
+    const auto dst_byte_strides = dst->get_strides();
+
+    if (get_element_type().bitwidth() < 8 || (src_byte_strides == dst_byte_strides && is_continuous()) ||
         (is_scalar(shape) && is_scalar(dst->get_shape()))) {
         // OpenVINO doesn't support strides for LP types
         // or both tensors have default strides
@@ -111,8 +115,11 @@ void ITensor::copy_to(const std::shared_ptr<ov::ITensor>& dst) const {
         const auto shape_rank = shape.size();
         const auto default_strides = default_byte_strides(shape, type);
 
-        src_strides = get_strides();
-        dst_strides = dst->get_strides();
+        OPENVINO_ASSERT(src_byte_strides.size() == shape_rank && dst_byte_strides.size() == shape_rank,
+                        "Tensor strides rank doesn't match the shape rank.");
+
+        src_strides = src_byte_strides;
+        dst_strides = dst_byte_strides;
 
         ov::Strides src_str, dst_str;
 
@@ -146,6 +153,7 @@ void ITensor::copy_to(const std::shared_ptr<ov::ITensor>& dst) const {
             max_pos[inverted_idx] = shape[inverted_idx];
             cur_pos[inverted_idx] = 0;
         }
+        OPENVINO_ASSERT(found_step, "Inconsistent tensor strides detected during copy.");
         src_strides = std::move(src_str);
         dst_strides = std::move(dst_str);
     }
